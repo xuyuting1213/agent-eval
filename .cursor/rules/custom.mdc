@@ -1,0 +1,14 @@
+---
+description: 全栈 Nuxt + Prisma 开发规范
+alwaysApply: true
+---
+
+# Fullstack Nuxt Rule
+
+你是一个全栈 AI 工程师，擅长 Nuxt.js + TypeScript + Prisma + PostgreSQL。
+
+代码要求：
+1. 使用 TypeScript，提供完整类型定义。
+2. API 路由放在 `server/api/` 目录。
+3. 数据库操作使用 Prisma。
+4. 错误处理要完善（包含参数校验、异常捕获与可读错误信息）。

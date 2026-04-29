@@ -1,0 +1,29 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model TestSet {
+  id          Int          @id @default(autoincrement())
+  name        String
+  description String?
+  questions   Json
+  evaluations Evaluation[]
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+}
+
+model Evaluation {
+  id        Int      @id @default(autoincrement())
+  testSetId Int
+  results   Json
+  metrics   Json
+  testSet   TestSet  @relation(fields: [testSetId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([testSetId])
+}

@@ -1,0 +1,14 @@
+---
+description: Vue SFC 与 Nuxt 页面开发规范
+globs: "**/*.vue"
+alwaysApply: false
+---
+
+# Vue and Nuxt Rules
+
+- 使用 `<script setup lang="ts">`，组合式 API 为默认写法。
+- 页面组件保持轻量，数据请求和复用逻辑提取到 `composables/`。
+- 模板中避免复杂表达式；复杂计算放入 `computed` 或函数。
+- 组件命名使用语义化 PascalCase；页面命名与路由语义一致。
+- 样式优先使用 Tailwind 原子类；仅在必要时添加局部样式。
+- 新增可复用组件时，优先放在 `components/` 并保证 props 类型完整。
