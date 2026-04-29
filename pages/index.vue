@@ -51,7 +51,7 @@
                     <span v-else>⏳ 评测中</span>
                   </button>
                   <div class="flex items-center justify-between">
-                    <div class="text-xs text-slate-500">🔍 启用联网搜索</div>
+                    <div class="text-xs text-slate-500">联网搜索</div>
                     <n-switch v-model:value="enableTools" size="small" />
                   </div>
                   <button
