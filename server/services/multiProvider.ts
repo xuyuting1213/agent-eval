@@ -1,4 +1,6 @@
-// server/services/multiProvider.ts — LangChain ChatOpenAI per provider
+/**
+ * 横评等多厂商路径：按 `config/models` 的 provider 调用对应兼容端点，并估算单次调用的美元成本。
+ */
 import { HumanMessage, SystemMessage, AIMessage } from '@langchain/core/messages'
 import { getModelConfig } from '~/server/config/models'
 import {

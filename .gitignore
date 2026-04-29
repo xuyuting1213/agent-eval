@@ -23,6 +23,9 @@ logs
 .env.*
 !.env.example
 
+# Cursor local MCP config (may contain secrets)
+.cursor/mcp.json
+
 /generated/prisma
 
 # Local SQLite databases (use PostgreSQL in production)

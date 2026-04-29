@@ -1,3 +1,7 @@
+/**
+ * DELETE /api/test-sets/:id
+ * 删除指定用例（关联 Evaluation 由 Prisma 级联策略处理，见 schema）。
+ */
 import { prisma } from '~/server/utils/db'
 
 export default defineEventHandler(async (event) => {

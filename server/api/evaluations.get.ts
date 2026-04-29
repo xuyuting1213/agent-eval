@@ -1,4 +1,7 @@
-// 历史记录API
+/**
+ * GET /api/evaluations
+ * 打分记录分页列表：query `page`、`pageSize`，返回 `data` + `pagination`。
+ */
 import { prisma } from '~/server/utils/db'
 
 export default defineEventHandler(async (event) => {

@@ -1,5 +1,6 @@
-// 创建历史记录 API
-// server/api/evaluations.get.ts
+/**
+ * 与 `server/api/evaluations.get.ts` 列表逻辑相近的服务层副本（若仅 API 使用可考虑合并到一处）。
+ */
 import { prisma } from '~/server/utils/db'
 
 export default defineEventHandler(async (event) => {

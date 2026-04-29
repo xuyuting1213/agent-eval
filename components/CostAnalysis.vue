@@ -46,6 +46,8 @@ const props = defineProps<{
   results: Array<{
     model: string
     displayName: string
+    available?: boolean
+    error?: string
     summary: {
       totalCost?: number
       averageScore: number
@@ -54,11 +56,14 @@ const props = defineProps<{
 }>()
 
 const costData = computed(() => {
-  return props.results.map(r => ({
-    name: r.displayName,
-    cost: r.summary.totalCost || 0,
-    score: r.summary.averageScore
-  })).sort((a, b) => a.cost - b.cost)
+  return props.results
+    .filter((r) => r.available !== false && !r.error)
+    .map(r => ({
+      name: r.displayName,
+      cost: r.summary.totalCost || 0,
+      score: r.summary.averageScore
+    }))
+    .sort((a, b) => a.cost - b.cost)
 })
 
 const maxCost = computed(() => {

@@ -7,6 +7,7 @@ alwaysApply: true
 
 - 使用 TypeScript，避免 `any`，优先补充明确类型。
 - 页面放在 `pages/`，可复用逻辑放在 `composables/`，避免在页面中堆积业务逻辑。
+- 写业务函数要加关键的注释
 - 服务端接口使用 `server/api/`，保持返回结构稳定（`success`、`data`、`message` 或同类固定约定）。
 - UI 组件优先复用现有组件与样式体系（Tailwind + Naive UI），避免混用新方案。
 - 引入新依赖前先确认必要性；能用 Nuxt 内置能力实现时，优先内置方案。

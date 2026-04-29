@@ -1,4 +1,7 @@
-// server/api/evaluations/[id].get.ts
+/**
+ * GET /api/evaluations/:id
+ * 单条打分记录详情（含关联 TestSet），供详情页展示。
+ */
 import { prisma } from '~/server/utils/db'
 
 export default defineEventHandler(async (event) => {

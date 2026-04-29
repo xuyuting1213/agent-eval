@@ -147,7 +147,7 @@ export default defineEventHandler(async (event) => {
 
 ## 7. 数据模型（Prisma）
 
-- **TestSet**：用例（一批追问）；`questions` 为 Json（通常为字符串数组）。
+- **TestSet**：用例（一批问题）；`questions` 为 Json（通常为字符串数组）。
 - **Evaluation**：一次评测结果；关联 `testSetId`；`results`、`metrics` 为 Json。
 
 数据库连接字符串来自环境变量 **`DATABASE_URL`**；客户端在 `server/utils/db.ts` 中做单例与开发环境缓存。

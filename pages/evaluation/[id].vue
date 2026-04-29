@@ -1,27 +1,41 @@
 <template>
   <div class="min-h-screen bg-gray-50">
     <header class="bg-white shadow-sm border-b">
-      <div class="max-w-7xl mx-auto px-4 py-4">
+      <div class="max-w-7xl mx-auto px-4 py-4 sm:px-6">
         <div class="flex items-center gap-4">
           <button @click="navigateTo('/history')" class="text-gray-500 hover:text-gray-700">
             ← 返回
           </button>
-          <h1 class="text-2xl font-bold text-gray-800">记录详情</h1>
+          <h1 class="text-xl font-bold text-gray-800 sm:text-2xl">记录详情</h1>
         </div>
       </div>
     </header>
 
-    <main class="max-w-7xl mx-auto px-4 py-8">
-      <div v-if="loading" class="text-center py-12">
-        <div class="animate-spin text-2xl">⏳</div>
-        <p class="text-gray-400 mt-2">加载中...</p>
+    <main class="max-w-7xl mx-auto px-4 py-6 sm:px-6 sm:py-8">
+      <div v-if="loading" class="space-y-6">
+        <div class="bg-white rounded-lg shadow-sm p-6">
+          <Skeleton height="h-6" width="20%" />
+          <div class="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-4">
+            <Skeleton height="h-12" width="100%" />
+            <Skeleton height="h-12" width="100%" />
+            <Skeleton height="h-12" width="100%" />
+            <Skeleton height="h-12" width="100%" />
+          </div>
+        </div>
+        <div class="bg-white rounded-lg shadow-sm p-6 space-y-4">
+          <Skeleton height="h-5" width="25%" />
+          <div v-for="i in 3" :key="`detail-skeleton-${i}`" class="space-y-2">
+            <Skeleton height="h-4" width="65%" />
+            <Skeleton height="h-16" width="100%" />
+          </div>
+        </div>
       </div>
 
       <div v-else-if="evaluation" class="space-y-6">
         <!-- 概览卡片 -->
         <div class="bg-white rounded-lg shadow-sm p-6">
           <h2 class="text-lg font-medium mb-4">📊 概览</h2>
-          <div class="grid grid-cols-4 gap-4">
+          <div class="grid grid-cols-2 gap-4 sm:grid-cols-4">
             <div>
               <div class="text-xs text-gray-400">问题数量</div>
               <div class="text-xl font-bold">{{ metrics.totalQuestions }}</div>
@@ -49,7 +63,7 @@
             <h2 class="font-medium text-gray-700">📝 详细结果</h2>
           </div>
           <div class="divide-y">
-            <div v-for="(result, idx) in results" :key="idx" class="p-6">
+            <div v-for="(result, idx) in results" :key="idx" class="p-4 sm:p-6">
               <div class="flex items-start gap-3">
                 <div class="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-sm font-bold flex-shrink-0">
                   {{ idx + 1 }}
@@ -83,7 +97,7 @@
                     </details>
                   </div>
                   <!-- Token 统计 -->
-                  <div class="text-xs text-gray-400 flex gap-4">
+                  <div class="flex flex-wrap gap-3 text-xs text-gray-400">
                     <span>📊 Token: {{ result.totalTokens || 0 }}</span>
                     <span>⏱️ 耗时: {{ result.duration || 0 }}ms</span>
                   </div>

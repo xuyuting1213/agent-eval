@@ -1,3 +1,7 @@
+/**
+ * GET /api/config-status
+ * 返回各厂商 API Key 是否在环境变量中配置（布尔），供前端展示「是否可用」；不返回密钥本身。
+ */
 function hasEnv(...keys: string[]): boolean {
   for (const key of keys) {
     const v = process.env[key]?.trim()

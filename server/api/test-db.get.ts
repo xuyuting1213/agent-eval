@@ -1,3 +1,7 @@
+/**
+ * GET /api/test-db
+ * 开发用：校验数据库可写（插入一条 TestSet 后返回）。生产环境（NODE_ENV=production）应关闭或鉴权，避免滥用。
+ */
 import pkg from '@prisma/client'
 import { PrismaPg } from '@prisma/adapter-pg'
 

@@ -1,4 +1,7 @@
-// 评分服务 — LangChain Prompt + 调用后 Zod 校验（兼容智谱等返回 ```json 包裹的情况）
+/**
+ * 对「问题 + 模型回答」打多维分与综合分：LangChain 提示词 + 模型 JSON 输出 + Zod 校验；
+ * 对厂商返回的 markdown 代码块做剥离后再解析。
+ */
 import { ChatPromptTemplate } from '@langchain/core/prompts'
 import type { AIMessage } from '@langchain/core/messages'
 import { RunnableLambda } from '@langchain/core/runnables'

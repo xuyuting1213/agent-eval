@@ -1,10 +1,12 @@
-// 评价API
+/**
+ * POST /api/evaluate
+ * 工作台单次跑批：按指定模型对多条问题生成回答，再打分，写入 Evaluation；可自动创建 TestSet。
+ */
 import { z } from 'zod'
-import { callOpenAI, batchCallOpenAI } from '~/server/services/openai'
-import { batchScore } from '~/server/services/scorer'  // 👈 添加评分服务
+import { batchCallOpenAI } from '~/server/services/openai'
+import { batchScore } from '~/server/services/scorer'
 import { prisma } from '~/server/utils/db'
 
-// 验证请求体
 const EvaluateSchema = z.object({
   questions: z.array(z.string()).min(1).max(20),
   model: z.string().default('glm-4-flash'),
@@ -53,6 +55,7 @@ export default defineEventHandler(async (event) => {
   }
   
   const totalDuration = Date.now() - startTime
+  const totalTokens = results.reduce((sum, item) => sum + (item.totalTokens || 0), 0)
   
   // ========== 2. 对答案进行评分 ==========
   let scoredResults = []
@@ -105,6 +108,7 @@ export default defineEventHandler(async (event) => {
         totalDuration,
         averageDuration: totalDuration / questions.length,
         model,
+        totalTokens,
         averageScore,  // 👈 添加平均分到 metrics
       },
     },
@@ -117,6 +121,7 @@ export default defineEventHandler(async (event) => {
     metrics: {
       totalDuration,
       averageDuration: totalDuration / questions.length,
+      totalTokens,
       averageScore,
     },
   }

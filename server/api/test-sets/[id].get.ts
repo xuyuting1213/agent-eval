@@ -1,3 +1,7 @@
+/**
+ * GET /api/test-sets/:id
+ * 单个用例详情；不存在返回 404。
+ */
 import { prisma } from '~/server/utils/db'
 
 export default defineEventHandler(async (event) => {

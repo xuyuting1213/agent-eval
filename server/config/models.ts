@@ -1,4 +1,7 @@
-// server/config/models.ts
+/**
+ * 前端「横评 / 工作台」可选模型清单：id（value）、展示名、所属厂商、描述、maxTokens、估算美元/1K tokens。
+ * `server/services/llm.ts` 根据 `provider` 解析 Key 与 baseURL；`multiProvider.ts` 用此处价格估算成本。
+ */
 export interface ModelConfig {
   value: string
   name: string

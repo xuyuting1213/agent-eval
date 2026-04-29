@@ -1,3 +1,7 @@
+/**
+ * POST /api/test-sets/:id/run
+ * 对某用例内全部问题跑指定模型（body.model：glm-4-flash | glm-4-plus），打分并写入 Evaluation，返回报告摘要。
+ */
 import { prisma } from '~/server/utils/db'
 import { batchCallOpenAI } from '~/server/services/openai'
 import { batchScore } from '~/server/services/scorer'
@@ -7,7 +11,6 @@ export default defineEventHandler(async (event) => {
   const body = (await readBody(event).catch(() => ({}))) as { model?: string }
   const model = body.model === 'glm-4-plus' ? 'glm-4-plus' : 'glm-4-flash'
   
-  // 获取测试集
   const testSet = await prisma.testSet.findUnique({
     where: { id }
   })

@@ -1,413 +1,504 @@
 <template>
-  <div class="min-h-screen bg-gray-50">
-    <!-- 头部 -->
-    <header class="bg-white shadow-sm border-b">
-      <div class="max-w-7xl mx-auto px-4 py-4">
-        <h1 class="text-2xl font-bold text-gray-800">比言 · 工作台</h1>
-        <p class="text-gray-500 text-sm mt-1">
-          同一批追问下对比各模型回答，按统一维度打分，方便选型与留痕
-        </p>
-      </div>
+  <EvaluateSkeleton v-if="initialLoading" />
+
+  <div v-else class="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
+    <!-- 头部保持不变 -->
+    <header
+      class="sticky top-0 z-10 border-b bg-white/80 backdrop-blur-md shadow-sm"
+    >
+      <!-- ... 头部内容不变 ... -->
     </header>
 
-    <main class="max-w-7xl mx-auto px-4 py-8">
-      <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        <!-- 左侧：输入区 -->
-        <div class="space-y-6">
-          <!-- 问题输入 -->
-          <div class="bg-white rounded-lg shadow-sm p-6">
-            <label class="block text-sm font-medium text-gray-700 mb-2">
-              📝 追问
-              <span class="text-gray-400 text-xs ml-2">每行一条（会发给模型）</span>
-              <NuxtLink
-                :to="{ path: '/test-sets', query: { model: selectedModel } }"
-                class="text-sm text-blue-500 hover:text-blue-600"
-              >
-                📋 从用例载入
-              </NuxtLink>
-            </label>
-            <textarea
-              v-model="questionsText"
-              rows="8"
-              class="w-full border border-gray-300 rounded-lg p-3 font-mono text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder="例如：
+    <main class="mx-auto max-w-[1600px] px-6 py-6">
+      <div class="grid grid-cols-1 xl:grid-cols-[400px_1fr] gap-6">
+        <!-- ========== 左侧配置面板 ========== -->
+        <aside class="space-y-5">
+          <!-- 🚀 运行控制卡片 - 移到最上面 -->
+          <div
+            class="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl shadow-sm border border-blue-200 overflow-hidden sticky top-10"
+          >
+            <div class="px-5 py-3.5 border-b border-blue-200 bg-white/50">
+              <h3 class="font-semibold text-blue-800">
+                <span class="text-lg mr-1">⚡</span> 快速运行
+              </h3>
+            </div>
+            <div class="p-5 space-y-4">
+              <!-- 快捷操作栏 -->
+              <div class="flex items-center justify-between gap-4 flex-wrap">
+                <div
+                  class="flex items-center gap-3 rounded-lg bg-white px-3 py-1.5 shadow-sm"
+                >
+                  <span class="text-xs text-slate-400">问题</span>
+                  <span class="text-lg font-bold text-blue-600">{{
+                    questionCount
+                  }}</span>
+                  <span class="text-slate-300">|</span>
+                  <span class="text-xs text-slate-400">进度</span>
+                  <span class="text-lg font-bold text-emerald-600">{{
+                    completedCount
+                  }}</span>
+                  <span class="text-sm text-slate-400"
+                    >/{{ questionCount }}</span
+                  >
+                </div>
+                <div class="flex gap-2">
+                  <button
+                    @click="runEvaluation"
+                    :disabled="loading || questionCount === 0"
+                    class="px-6 py-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg font-medium hover:from-blue-600 hover:to-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-md flex items-center gap-2"
+                  >
+                    <span v-if="!loading">▶ 开始评测</span>
+                    <span v-else>⏳ 评测中</span>
+                  </button>
+                  <div class="flex items-center justify-between">
+                    <div class="text-xs text-slate-500">🔍 启用联网搜索</div>
+                    <n-switch v-model:value="enableTools" size="small" />
+                  </div>
+                  <button
+                    v-if="loading"
+                    @click="cancelEvaluation"
+                    class="px-4 py-2 bg-red-50 text-red-600 border border-red-200 rounded-lg font-medium hover:bg-red-100 transition-all"
+                  >
+                    🛑 中断
+                  </button>
+                </div>
+              </div>
+
+              <!-- 进度条 -->
+              <div v-if="loading && questionCount > 0">
+                <div class="flex justify-between text-xs text-slate-500 mb-1">
+                  <span>评测进度</span>
+                  <span
+                    >{{
+                      Math.round((completedCount / questionCount) * 100)
+                    }}%</span
+                  >
+                </div>
+                <div class="h-2 bg-slate-100 rounded-full overflow-hidden">
+                  <div
+                    class="h-full bg-blue-500 transition-all duration-300 rounded-full"
+                    :style="{
+                      width: `${(completedCount / questionCount) * 100}%`,
+                    }"
+                  ></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 问题输入卡片 -->
+          <div
+            class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden"
+          >
+            <div
+              class="px-5 py-3.5 border-b border-slate-100 bg-gradient-to-r from-slate-50 to-white"
+            >
+              <div class="flex items-center justify-between">
+                <h3 class="font-semibold text-slate-700">
+                  <span class="text-lg mr-1">📝</span> 问题集
+                </h3>
+                <NuxtLink
+                  :to="{ path: '/test-sets', query: { model: selectedModel } }"
+                  class="text-xs text-blue-500 hover:text-blue-600 flex items-center gap-1"
+                >
+                  <span>📂</span> 从用例载入
+                </NuxtLink>
+              </div>
+            </div>
+            <div class="p-5">
+              <textarea
+                v-model="questionsText"
+                rows="12"
+                class="w-full rounded-lg border border-slate-200 px-4 py-3 text-sm focus:border-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-100 resize-none font-mono"
+                placeholder="每行一个问题，例如：
 什么是 Vue 3 的 Composition API？
 解释一下 JavaScript 的闭包
 React 和 Vue 有什么区别？"
-            />
-            <div class="text-xs text-gray-400 mt-2">
-              共 {{ questionCount }} 条追问
+              ></textarea>
+              <div class="flex justify-between items-center mt-3">
+                <div class="flex items-center gap-3 text-xs text-slate-400">
+                  <span
+                    >📋 共
+                    <span class="font-semibold text-slate-600">{{
+                      questionCount
+                    }}</span>
+                    条</span
+                  >
+                  <span v-if="completedCount > 0" class="text-emerald-600"
+                    >✅ 已完成 {{ completedCount }}</span
+                  >
+                </div>
+                <button
+                  @click="clearQuestions"
+                  class="text-xs text-slate-400 hover:text-red-400 transition-colors"
+                >
+                  清空
+                </button>
+              </div>
             </div>
           </div>
 
-          <!-- 模型选择 -->
-          <div class="bg-white rounded-lg shadow-sm p-6">
-            <label class="block text-sm font-medium text-gray-700 mb-3">
-              🧠 选择模型
-            </label>
-            <div class="space-y-2">
-              <label
-                class="flex items-center gap-3 p-3 border rounded-lg cursor-pointer hover:bg-gray-50"
-              >
-                <input
-                  type="radio"
-                  v-model="selectedModel"
-                  value="glm-4-flash"
-                  class="w-4 h-4"
-                />
-                <div>
-                  <div class="font-medium">GLM-4-Flash</div>
-                  <div class="text-xs text-gray-400">题量多、要快速出结果时更合适</div>
-                </div>
-              </label>
-              <label
-                class="flex items-center gap-3 p-3 border rounded-lg cursor-pointer hover:bg-gray-50"
-              >
-                <input
-                  type="radio"
-                  v-model="selectedModel"
-                  value="glm-4-plus"
-                  class="w-4 h-4"
-                />
-                <div>
-                  <div class="font-medium">GLM-4-Plus</div>
-                  <div class="text-xs text-gray-400">
-                    效果更强，适合复杂问题
+          <!-- 模型选择卡片 -->
+          <div
+            class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden"
+          >
+            <div
+              class="px-5 py-3.5 border-b border-slate-100 bg-gradient-to-r from-slate-50 to-white"
+            >
+              <h3 class="font-semibold text-slate-700">
+                <span class="text-lg mr-1">🧠</span> 模型选型
+              </h3>
+            </div>
+            <div class="p-4">
+              <div class="grid grid-cols-2 gap-2 max-h-64 overflow-y-auto">
+                <div
+                  v-for="model in modelOptions"
+                  :key="model.value"
+                  @click="selectedModel = model.value"
+                  class="cursor-pointer rounded-lg border p-3 transition-all"
+                  :class="[
+                    selectedModel === model.value
+                      ? 'border-blue-400 bg-blue-50/50 ring-1 ring-blue-400'
+                      : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50',
+                  ]"
+                >
+                  <div class="flex items-start justify-between">
+                    <div>
+                      <div class="text-sm font-medium text-slate-800">
+                        {{ model.name }}
+                      </div>
+                      <div class="text-xs text-slate-400 mt-0.5">
+                        {{ model.desc }}
+                      </div>
+                    </div>
+                    <div
+                      v-if="selectedModel === model.value"
+                      class="text-blue-500 text-sm"
+                    >
+                      ✓
+                    </div>
                   </div>
                 </div>
-              </label>
+              </div>
             </div>
           </div>
+        </aside>
 
-          <!-- 执行按钮 -->
-          <button
-            @click="runEvaluation"
-            :disabled="loading || questionCount === 0"
-            class="w-full bg-blue-500 text-white py-3 rounded-lg font-medium hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-          >
-            <span v-if="!loading">🚀 开始打分</span>
-            <span v-else
-              >⏳ 打分中... ({{ completedCount }}/{{ questionCount }})</span
-            >
-          </button>
-        </div>
-
-        <!-- 右侧：结果区 -->
-        <div class="space-y-6">
-          <!-- 统计卡片 -->
+        <!-- ========== 右侧结果面板（保持不变） ========== -->
+        <section class="space-y-5">
+          <!-- 统计概览卡片 -->
           <div v-if="results.length > 0" class="grid grid-cols-3 gap-4">
-            <div class="bg-white rounded-lg shadow-sm p-4">
-              <div class="text-xs text-gray-400">总耗时</div>
-              <div class="text-xl font-bold text-gray-800">
-                {{ totalDuration }}ms
+            <div
+              class="bg-white rounded-xl shadow-sm border border-slate-200 p-4"
+            >
+              <div class="flex items-center gap-2 text-slate-400 text-sm mb-1">
+                <span>⏱️</span> 总耗时
+              </div>
+              <div class="text-2xl font-bold text-slate-800">
+                {{ totalDuration
+                }}<span class="text-sm font-normal text-slate-400 ml-1"
+                  >ms</span
+                >
               </div>
             </div>
-            <div class="bg-white rounded-lg shadow-sm p-4">
-              <div class="text-xs text-gray-400">平均耗时</div>
-              <div class="text-xl font-bold text-gray-800">
-                {{ avgDuration }}ms
+            <div
+              class="bg-white rounded-xl shadow-sm border border-slate-200 p-4"
+            >
+              <div class="flex items-center gap-2 text-slate-400 text-sm mb-1">
+                <span>⚡</span> 平均耗时
+              </div>
+              <div class="text-2xl font-bold text-slate-800">
+                {{ avgDuration
+                }}<span class="text-sm font-normal text-slate-400 ml-1"
+                  >ms</span
+                >
               </div>
             </div>
-            <div class="bg-white rounded-lg shadow-sm p-4">
-              <div class="text-xs text-gray-400">Token 总数</div>
-              <div class="text-xl font-bold text-gray-800">
-                {{ totalTokens }}
+            <div
+              class="bg-white rounded-xl shadow-sm border border-slate-200 p-4"
+            >
+              <div class="flex items-center gap-2 text-slate-400 text-sm mb-1">
+                <span>📊</span> Token 总数
+              </div>
+              <div class="text-2xl font-bold text-slate-800">
+                {{ totalTokens.toLocaleString() }}
               </div>
             </div>
           </div>
 
           <!-- 结果列表 -->
-          <div class="bg-white rounded-lg shadow-sm overflow-hidden">
-            <div class="border-b px-6 py-3 bg-gray-50">
-              <h2 class="font-medium text-gray-700">📊 打分结果</h2>
-            </div>
-
+          <div
+            class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden"
+          >
             <div
-              v-if="results.length === 0 && !loading"
-              class="p-12 text-center text-gray-400"
+              class="px-5 py-3.5 border-b border-slate-100 bg-gradient-to-r from-slate-50 to-white flex justify-between items-center"
             >
-              点击「开始打分」查看结果
+              <h3 class="font-semibold text-slate-700">
+                <span class="text-lg mr-1">📊</span> 评测结果
+              </h3>
+              <div class="flex gap-2">
+                <button
+                  v-if="results.length > 0"
+                  @click="exportResults"
+                  class="text-xs text-slate-500 hover:text-blue-500 px-2 py-1 rounded transition-colors"
+                >
+                  📥 导出 JSON
+                </button>
+                <button
+                  v-if="results.length > 0"
+                  @click="saveEvaluation"
+                  class="text-xs text-emerald-500 hover:text-emerald-600 px-2 py-1 rounded transition-colors"
+                >
+                  💾 保存到历史
+                </button>
+              </div>
             </div>
 
-            <div
-              v-if="loading && results.length === 0"
-              class="p-12 text-center text-gray-400"
-            >
-              正在调用 AI 模型...
-            </div>
+            <div class="p-5">
+              <EvaluateSkeleton v-if="loading && results.length === 0" />
 
-            <div class="divide-y">
               <div
-                v-for="(result, idx) in results"
-                :key="idx"
-                class="p-6 hover:bg-gray-50 transition-colors"
+                v-else-if="results.length === 0 && !loading"
+                class="text-center py-12"
               >
-                <div class="flex items-start gap-3">
-                  <!-- 问题序号 -->
+                <div class="text-5xl mb-3">✨</div>
+                <div class="text-slate-400">
+                  左侧选择模型并输入问题，点击「开始评测」
+                </div>
+              </div>
+
+              <div v-else class="space-y-4 max-h-[74vh] overflow-y-auto pr-2">
+                <!-- 结果卡片内容不变 -->
+                <div
+                  v-for="(result, idx) in results"
+                  :key="idx"
+                  class="border rounded-xl overflow-hidden transition-all"
+                  :class="{
+                    'border-blue-300 shadow-md shadow-blue-100/50':
+                      result.streamStatus === 'streaming',
+                    'border-emerald-200': result.streamStatus === 'done',
+                    'border-red-200': result.streamStatus === 'error',
+                  }"
+                >
+                  <!-- 问题头 -->
                   <div
-                    class="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-sm font-bold flex-shrink-0"
+                    class="px-4 py-3 bg-slate-50 border-b flex items-center justify-between flex-wrap gap-2"
                   >
-                    {{ idx + 1 }}
+                    <div class="flex items-center gap-2">
+                      <span
+                        class="w-6 h-6 rounded-full bg-blue-100 text-blue-600 text-xs font-medium flex items-center justify-center"
+                        >{{ idx + 1 }}</span
+                      >
+                      <span
+                        class="text-sm font-medium text-slate-700 break-words max-w-lg"
+                        >{{
+                          submittedQuestions[idx] || `问题 ${idx + 1}`
+                        }}</span
+                      >
+                    </div>
+                    <div class="flex items-center gap-2">
+                      <span
+                        v-if="result.streamStatus === 'streaming'"
+                        class="text-xs text-blue-500 bg-blue-50 px-2 py-0.5 rounded-full"
+                        >⏳ 生成中</span
+                      >
+                      <span
+                        v-else-if="result.streamStatus === 'done'"
+                        class="text-xs text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full"
+                        >✅ 已完成</span
+                      >
+                      <span
+                        v-else-if="result.streamStatus === 'error'"
+                        class="text-xs text-red-500 bg-red-50 px-2 py-0.5 rounded-full"
+                        >❌ 失败</span
+                      >
+                      <span
+                        v-if="enableTools && result.streamStatus === 'done'"
+                        class="text-xs px-2 py-0.5 rounded-full"
+                        :class="{
+                          'text-indigo-700 bg-indigo-100': result.toolSource === 'mcp',
+                          'text-amber-700 bg-amber-100': result.toolSource === 'tavily',
+                          'text-slate-600 bg-slate-100': !result.toolSource || result.toolSource === 'none',
+                        }"
+                      >
+                        {{
+                          result.toolSource === "mcp"
+                            ? "🌐 MCP 已调用"
+                            : result.toolSource === "tavily"
+                              ? "🌐 降级 Tavily"
+                              : "🌐 未调用 MCP"
+                        }}
+                      </span>
+                      <span
+                        v-if="result.score"
+                        class="text-sm font-semibold"
+                        :class="{
+                          'text-emerald-600': result.score >= 80,
+                          'text-amber-600':
+                            result.score >= 60 && result.score < 80,
+                          'text-red-500': result.score < 60,
+                        }"
+                        >{{ result.score }} 分</span
+                      >
+                    </div>
                   </div>
 
-                  <div class="flex-1 space-y-3">
-                    <!-- 问题 -->
-                    <div class="font-medium text-gray-800">
-                      {{ submittedQuestions[idx] || `追问 ${idx + 1}` }}
-                    </div>
-
-                    <!-- 答案 -->
+                  <!-- 回答内容 -->
+                  <div class="p-4 bg-white">
+                    <div class="text-xs text-slate-400 mb-2">回答内容</div>
                     <div
-                      class="text-gray-600 leading-relaxed bg-gray-50 rounded-lg p-3"
+                      class="bg-slate-50 rounded-lg p-3 text-sm text-slate-700 leading-relaxed whitespace-pre-wrap break-words max-h-48 overflow-y-auto"
                     >
-                      {{ result.content || "暂无回答" }}
+                      <div
+                        v-if="
+                          !result.content && result.streamStatus === 'streaming'
+                        "
+                        class="text-slate-400 flex items-center gap-2"
+                      >
+                        <span
+                          class="inline-block w-4 h-4 border-2 border-blue-400 border-t-transparent rounded-full animate-spin"
+                        ></span>
+                        正在生成回答...
+                      </div>
+                      <div v-else>{{ result.content || "暂无回答" }}</div>
                     </div>
+                  </div>
 
-                    <!-- 元数据 -->
-                    <div class="flex flex-wrap gap-4 text-xs text-gray-400">
-                      <span>📊 Token: {{ result.totalTokens || 0 }}</span>
-                      <span>⏱️ 耗时: {{ result.duration || 0 }}ms</span>
-                      <span v-if="result.promptTokens"
+                  <!-- 元数据折叠区 -->
+                  <details class="border-t bg-slate-50/50">
+                    <summary
+                      class="px-4 py-2 text-xs text-slate-400 cursor-pointer hover:text-slate-600 transition-colors"
+                    >
+                      查看详细指标
+                    </summary>
+                    <div class="px-4 pb-3 pt-1 flex flex-wrap gap-3">
+                      <span class="text-xs bg-white px-2 py-1 rounded border"
+                        >📊 Token: {{ result.totalTokens || 0 }}</span
+                      >
+                      <span class="text-xs bg-white px-2 py-1 rounded border"
+                        >⏱️ 耗时: {{ result.duration || 0 }}ms</span
+                      >
+                      <span
+                        v-if="result.promptTokens"
+                        class="text-xs bg-white px-2 py-1 rounded border"
                         >📥 输入: {{ result.promptTokens }}</span
                       >
-                      <span v-if="result.completionTokens"
+                      <span
+                        v-if="result.completionTokens"
+                        class="text-xs bg-white px-2 py-1 rounded border"
                         >📤 输出: {{ result.completionTokens }}</span
                       >
                     </div>
-                    <!-- 在 pages/index.vue 的结果列表模板中，找到答案展示的位置 -->
-                    <!-- 在 <div class="text-gray-600 leading-relaxed bg-gray-50 rounded-lg p-3"> 下面添加 -->
+                  </details>
 
-                    <!-- 评分展示 -->
-                    <div
-                      v-if="result.score"
-                      class="mt-3 pt-3 border-t border-gray-200"
+                  <!-- 评分详情 -->
+                  <details v-if="result.dimensions" class="border-t">
+                    <summary
+                      class="px-4 py-2 text-xs text-slate-400 cursor-pointer hover:text-slate-600 transition-colors"
                     >
-                      <div class="flex items-center gap-3 mb-2">
-                        <span class="text-sm font-medium text-gray-700"
-                          >综合评分：</span
-                        >
-                        <span
-                          class="text-lg font-bold px-2 py-0.5 rounded"
-                          :class="{
-                            'bg-green-100 text-green-700': result.score >= 80,
-                            'bg-yellow-100 text-yellow-700':
-                              result.score >= 60 && result.score < 80,
-                            'bg-red-100 text-red-700': result.score < 60,
-                          }"
-                        >
-                          {{ result.score }} 分
-                        </span>
-                      </div>
-
-                      <!-- 各维度评分 -->
-                      <div
-                        v-if="result.dimensions"
-                        class="flex flex-wrap gap-3 mb-2 text-xs"
-                      >
-                        <div class="flex items-center gap-1">
-                          <span class="text-gray-500">准确性:</span>
-                          <span class="font-medium">{{
-                            result.dimensions.accuracy
-                          }}</span>
-                        </div>
-                        <div class="flex items-center gap-1">
-                          <span class="text-gray-500">完整性:</span>
-                          <span class="font-medium">{{
-                            result.dimensions.completeness
-                          }}</span>
-                        </div>
-                        <div class="flex items-center gap-1">
-                          <span class="text-gray-500">相关性:</span>
-                          <span class="font-medium">{{
-                            result.dimensions.relevance
-                          }}</span>
-                        </div>
-                        <div class="flex items-center gap-1">
-                          <span class="text-gray-500">清晰度:</span>
-                          <span class="font-medium">{{
-                            result.dimensions.clarity
-                          }}</span>
+                      查看评分维度
+                    </summary>
+                    <div
+                      class="px-4 pb-3 pt-1 grid grid-cols-4 gap-2 text-center"
+                    >
+                      <div class="bg-blue-50 rounded p-2">
+                        <div class="text-xs text-slate-500">准确性</div>
+                        <div class="text-sm font-semibold text-blue-600">
+                          {{ result.dimensions.accuracy || 0 }}
                         </div>
                       </div>
-
-                      <!-- 评分理由（可折叠） -->
-                      <details v-if="result.reasoning" class="text-xs">
-                        <summary
-                          class="text-gray-400 cursor-pointer hover:text-gray-600"
-                        >
-                          查看评分理由
-                        </summary>
-                        <p class="text-gray-500 mt-1 p-2 bg-gray-50 rounded">
-                          {{ result.reasoning }}
-                        </p>
-                      </details>
+                      <div class="bg-emerald-50 rounded p-2">
+                        <div class="text-xs text-slate-500">完整性</div>
+                        <div class="text-sm font-semibold text-emerald-600">
+                          {{ result.dimensions.completeness || 0 }}
+                        </div>
+                      </div>
+                      <div class="bg-amber-50 rounded p-2">
+                        <div class="text-xs text-slate-500">相关性</div>
+                        <div class="text-sm font-semibold text-amber-600">
+                          {{ result.dimensions.relevance || 0 }}
+                        </div>
+                      </div>
+                      <div class="bg-purple-50 rounded p-2">
+                        <div class="text-xs text-slate-500">清晰度</div>
+                        <div class="text-sm font-semibold text-purple-600">
+                          {{ result.dimensions.clarity || 0 }}
+                        </div>
+                      </div>
                     </div>
-                  </div>
+                    <div v-if="result.reasoning" class="px-4 pb-3">
+                      <div class="text-xs text-slate-400 mb-1">评分理由</div>
+                      <div
+                        class="text-xs text-slate-600 bg-slate-50 p-2 rounded"
+                      >
+                        {{ result.reasoning }}
+                      </div>
+                    </div>
+                  </details>
                 </div>
               </div>
             </div>
           </div>
-
-          <!-- 保存按钮 -->
-          <div v-if="results.length > 0" class="flex gap-3">
-            <button
-              @click="saveEvaluation"
-              class="flex-1 bg-green-500 text-white py-2 rounded-lg font-medium hover:bg-green-600 transition-colors"
-            >
-              💾 保存本次结果
-            </button>
-            <button
-              @click="exportResults"
-              class="px-4 py-2 border rounded-lg text-gray-600 hover:bg-gray-50 transition-colors"
-            >
-              📋 导出 JSON
-            </button>
-          </div>
-        </div>
+        </section>
       </div>
     </main>
   </div>
 </template>
-
 <script setup lang="ts">
-import { ref, computed, onMounted } from "vue";
-
-interface EvaluationResultItem {
-  content?: string;
-  promptTokens?: number;
-  completionTokens?: number;
-  totalTokens?: number;
-  duration?: number;
-  score?: number;
-  dimensions?: {
-    accuracy?: number;
-    completeness?: number;
-    relevance?: number;
-    clarity?: number;
-  };
-  reasoning?: string;
-}
-
-interface EvaluateResponse {
-  id?: number;
-  results?: EvaluationResultItem[];
-}
-
+import { ref, onMounted } from "vue";
+import EvaluateSkeleton from "~/components/skeletons/EvaluateSkeleton.vue";
+import { modelOptions } from "~/composables/useModelOptions";
+import { useEvaluateRunner } from "~/composables/useEvaluateRunner";
+import {
+  useMessage,
+  NSwitch,
+} from "naive-ui";
+const enableTools = ref(false);
+const message = useMessage();
 const questionsText = ref(
-  "什么是 Vue 3 的 Composition API？\n解释一下 JavaScript 的闭包\nReact 和 Vue 有什么区别？",
+  "近一周ai圈大事，帮我根据日期列出。\n五一上海天气如何？",
 );
-const submittedQuestions = ref<string[]>([]);
 const selectedModel = ref("glm-4-flash");
-const loading = ref(false);
-const results = ref<EvaluationResultItem[]>([]);
-const evaluationId = ref<number | null>(null);
+const initialLoading = ref(true);
 
-// 计算属性
-const questionCount = computed(() => {
-  return questionsText.value.split("\n").filter((q) => q.trim()).length;
+const {
+  loading,
+  results,
+  submittedQuestions,
+  questionCount,
+  completedCount,
+  totalDuration,
+  avgDuration,
+  totalTokens,
+  runEvaluation,
+  cancelEvaluation,
+  saveEvaluation,
+  exportResults,
+} = useEvaluateRunner({
+  selectedModel,
+  questionsText,
+  enableTools,
+  message,
 });
 
-const completedCount = computed(() => results.value.length);
-
-const totalDuration = computed(() => {
-  return results.value.reduce((sum, r) => sum + (r.duration || 0), 0);
-});
-
-const avgDuration = computed(() => {
-  if (results.value.length === 0) return 0;
-  return Math.round(totalDuration.value / results.value.length);
-});
-
-const totalTokens = computed(() => {
-  return results.value.reduce((sum, r) => sum + (r.totalTokens || 0), 0);
-});
-
-// 执行评测
-const runEvaluation = async () => {
-  const questions = questionsText.value
-    .split("\n")
-    .map((q) => q.trim())
-    .filter(Boolean);
-
-  if (questions.length === 0) {
-    alert("请至少输入一条追问");
-    return;
-  }
-
-  loading.value = true;
-  results.value = [];
-  submittedQuestions.value = questions;
-  evaluationId.value = null;
-
-  try {
-    const response = await $fetch<EvaluateResponse>("/api/evaluate", {
-      method: "POST",
-      body: {
-        questions,
-        model: selectedModel.value,
-      },
-    });
-
-    results.value = response.results ?? [];
-    evaluationId.value = response.id ?? null;
-  } catch (error: any) {
-    console.error("评测失败:", error);
-    alert(`打分失败: ${error.data?.message || error.message}`);
-    results.value = [];
-  } finally {
-    loading.value = false;
-  }
+const scoreTagType = (score: number) => {
+  if (score >= 80) return "success";
+  if (score >= 60) return "warning";
+  return "error";
 };
 
-// 保存评测
-const saveEvaluation = async () => {
-  if (!evaluationId.value) {
-    alert("暂无可保存的结果");
-    return;
-  }
-
-  try {
-    await $fetch(`/api/evaluations/${evaluationId.value}/save`, {
-      method: "POST",
-      body: {
-        name: `比言_${new Date().toLocaleString()}`,
-      },
-    });
-    alert("保存成功！可以在历史记录中查看");
-  } catch (error) {
-    console.error("保存失败:", error);
-    alert("保存失败");
-  }
+// 清空输入问题，避免模板中引用未定义方法
+const clearQuestions = () => {
+  questionsText.value = "";
 };
 
-// 导出结果
-const exportResults = () => {
-  const data = {
-    timestamp: new Date().toISOString(),
-    model: selectedModel.value,
-    questions: questionsText.value.split("\n").filter((q) => q.trim()),
-    results: results.value,
-    metrics: {
-      totalDuration: totalDuration.value,
-      avgDuration: avgDuration.value,
-      totalTokens: totalTokens.value,
-    },
-  };
-
-  const blob = new Blob([JSON.stringify(data, null, 2)], {
-    type: "application/json",
-  });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = `evaluation_${Date.now()}.json`;
-  a.click();
-  URL.revokeObjectURL(url);
-};
 onMounted(() => {
   const route = useRoute();
   const modelFromQuery = route.query.model;
-  if (modelFromQuery === "glm-4-flash" || modelFromQuery === "glm-4-plus") {
+  const isValidModel =
+    typeof modelFromQuery === "string" &&
+    modelOptions.some((model) => model.value === modelFromQuery);
+  if (isValidModel) {
     selectedModel.value = modelFromQuery;
   }
 
@@ -416,5 +507,16 @@ onMounted(() => {
     questionsText.value = saved;
     sessionStorage.removeItem("testQuestions");
   }
+
+  setTimeout(() => {
+    initialLoading.value = false;
+  }, 500);
 });
 </script>
+
+<style scoped>
+.whitespace-pre-wrap {
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+</style>

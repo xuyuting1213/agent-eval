@@ -1,3 +1,7 @@
+/**
+ * POST /api/evaluations/:id/save
+ * 将展示名写回关联的 TestSet（按业务用于「命名/保存」流程）。
+ */
 import { z } from 'zod'
 import { prisma } from '~/server/utils/db'
 

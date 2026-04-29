@@ -1,5 +1,7 @@
-// OpenAI 调用服务（LangChain ChatOpenAI；兼容智谱 / OpenAI 环境与 previous ZHIPU||OPENAI 行为）
-
+/**
+ * 工作台主路径用大模型：基于 LangChain `ChatOpenAI`，通过 `createChatModel` 按模型 id 选厂商。
+ * 导出 `callOpenAI` / `batchCallOpenAI` 与 token、耗时结构，供 `evaluate.post`、`test-sets/.../run` 等使用。
+ */
 import { HumanMessage, SystemMessage, AIMessage } from '@langchain/core/messages'
 import {
   createChatModel,
@@ -13,6 +15,24 @@ export interface OpenAICallResult {
   completionTokens: number
   totalTokens: number
   duration: number
+}
+
+function buildSystemPrompt(): string {
+  const now = new Date()
+  const nowCN = new Intl.DateTimeFormat('zh-CN', {
+    timeZone: 'Asia/Shanghai',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false,
+  }).format(now)
+
+  return `你是一个专业的 AI 助手，请准确、清晰地回答问题。
+当前系统时间（北京时间）是：${nowCN}。
+当用户询问今天几号、当前时间、星期几等时，请基于该时间回答。`
 }
 
 function mapEvaluateError(error: unknown, model: string): Error {
@@ -59,9 +79,7 @@ export async function callOpenAI(
 
   try {
     const response = await chat.invoke([
-      new SystemMessage(
-        '你是一个专业的 AI 助手，请准确、清晰地回答问题。',
-      ),
+      new SystemMessage(buildSystemPrompt()),
       new HumanMessage(question),
     ]) as AIMessage
 

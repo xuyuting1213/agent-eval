@@ -1,4 +1,7 @@
-// 对比模型API
+/**
+ * POST /api/compare
+ * 横评：对多个模型 id 并行问答，再分别打分，返回对比结构（不落库或按现有逻辑返回）。
+ */
 import { z } from 'zod'
 import { callModel } from '~/server/services/multiProvider'
 import { batchScore } from '~/server/services/scorer'

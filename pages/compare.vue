@@ -1,11 +1,13 @@
 <template>
   <div class="min-h-screen bg-gray-50">
     <!-- 头部 -->
-    <header class="bg-white shadow-sm border-b sticky top-0 z-10">
-      <div class="max-w-7xl mx-auto px-4 py-4">
-        <div class="flex items-center justify-between">
+    <header class="sticky top-0 z-10 border-b bg-white shadow-sm">
+      <div class="mx-auto max-w-7xl px-4 py-4 sm:px-6">
+        <div
+          class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"
+        >
           <div>
-            <h1 class="text-2xl font-bold text-gray-800">横评</h1>
+            <h1 class="text-xl font-bold text-gray-800 sm:text-2xl">横评</h1>
             <p class="text-gray-500 text-sm mt-1">
               同一批题目，并排看清各家回答与得分，便于拍板选型
             </p>
@@ -20,15 +22,15 @@
       </div>
     </header>
 
-    <main class="max-w-7xl mx-auto px-4 py-8">
+    <main class="mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-8">
       <!-- 配置区 -->
-      <div class="bg-white rounded-lg shadow-sm p-6 mb-8">
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          <!-- 左侧：追问输入 -->
+      <div class="mb-8 rounded-lg bg-white p-4 shadow-sm sm:p-6">
+        <div class="grid grid-cols-1 gap-6 lg:grid-cols-2 lg:gap-8">
+          <!-- 左侧：问题输入 -->
           <div>
             <div class="flex items-center justify-between mb-2">
               <label class="block text-sm font-medium text-gray-700">
-                📝 追问
+                📝 问题
               </label>
               <button
                 @click="loadFromTestSet"
@@ -41,7 +43,7 @@
               v-model="questionsText"
               rows="8"
               class="w-full border border-gray-300 rounded-lg p-3 font-mono text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder="每行一条追问（将同时发给各模型），例如：
+              placeholder="每行一条问题（将同时发给各模型），例如：
 什么是 Vue 3 的 Composition API？
 解释一下 JavaScript 的闭包
 React 和 Vue 有什么区别？
@@ -50,7 +52,7 @@ TypeScript 的好处是什么？"
             />
             <div class="flex justify-between mt-2">
               <div class="text-xs text-gray-400">
-                共 {{ questionsCount }} 条追问
+                共 {{ questionsCount }} 条问题
               </div>
               <button
                 @click="clearQuestions"
@@ -84,7 +86,9 @@ TypeScript 的好处是什么？"
               </div>
             </div>
 
-            <div class="space-y-4 max-h-[400px] overflow-y-auto pr-2">
+            <div
+              class="max-h-[320px] space-y-4 overflow-y-auto pr-1 sm:max-h-[400px] sm:pr-2"
+            >
               <!-- 智谱 AI 系列 -->
               <div>
                 <div
@@ -139,7 +143,9 @@ TypeScript 的好处是什么？"
                 >
                   <span
                     class="w-2 h-2 rounded-full"
-                    :class="configStatus.openai ? 'bg-green-500' : 'bg-gray-400'"
+                    :class="
+                      configStatus.openai ? 'bg-green-500' : 'bg-gray-400'
+                    "
                   ></span>
                   OpenAI
                   <span class="text-gray-300 text-xs">(需配置 API Key)</span>
@@ -253,24 +259,24 @@ TypeScript 的好处是什么？"
         </div>
 
         <!-- 执行按钮 -->
-        <div class="mt-6 flex gap-3">
+        <div class="mt-6 flex flex-col gap-3 sm:flex-row">
           <button
             @click="runCompare"
             :disabled="
-              loading || questionsCount === 0 || selectedModels.length < 2
+              loading || selectedModels.length < 2
             "
-            class="flex-1 bg-blue-500 text-white py-3 rounded-lg font-medium hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            class="flex-1 rounded-lg bg-blue-500 py-3 font-medium text-white transition-colors hover:bg-blue-600 disabled:cursor-not-allowed disabled:opacity-50"
           >
             <span v-if="!loading">🚀 开始横评</span>
             <span v-else class="flex items-center justify-center gap-2">
               <span class="animate-spin">⏳</span>
-              横评中... ({{ completedCount }}/{{ totalCalls }})
+              横评中... 已完成调用 {{ completedCount }}/{{ totalCalls }}（{{ questionsCount }} 个问题 × {{ selectedModels.length }} 个模型）
             </span>
           </button>
           <button
             v-if="compareResults.length > 0"
             @click="resetCompare"
-            class="px-4 py-3 border rounded-lg text-gray-600 hover:bg-gray-50"
+            class="rounded-lg border px-4 py-3 text-gray-600 hover:bg-gray-50"
           >
             重置
           </button>
@@ -304,7 +310,7 @@ TypeScript 的好处是什么？"
                 <li class="flex items-center gap-2">
                   <span class="w-3 h-3 bg-green-500 rounded-full"></span>
                   <span class="font-medium">完整性 (25%)</span>
-                  <span class="text-gray-400">- 是否覆盖追问涉及的要点</span>
+                  <span class="text-gray-400">- 是否覆盖问题涉及的要点</span>
                 </li>
                 <li class="flex items-center gap-2">
                   <span class="w-3 h-3 bg-yellow-500 rounded-full"></span>
@@ -346,15 +352,30 @@ TypeScript 的好处是什么？"
               <div class="flex items-center justify-between mb-2">
                 <div class="font-semibold text-lg">{{ model.displayName }}</div>
                 <div
-                  v-if="idx === 0"
+                  v-if="idx === 0 && model.available !== false && !model.error"
                   class="text-xs bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded-full"
                 >
                   🏆 综合最优
                 </div>
+                <div
+                  v-else-if="model.available === false || model.error"
+                  class="text-xs bg-red-100 text-red-700 px-2 py-0.5 rounded-full"
+                >
+                  ❌ 调用失败
+                </div>
               </div>
-              <div class="text-3xl font-bold text-blue-600 my-2">
-                {{ model.summary.averageScore.toFixed(1)
+              <div class="text-3xl font-bold my-2" :class="model.available === false || model.error ? 'text-red-500' : 'text-blue-600'">
+                {{
+                  model.available === false || model.error
+                    ? "--"
+                    : model.summary.averageScore.toFixed(1)
                 }}<span class="text-sm text-gray-400">分</span>
+              </div>
+              <div
+                v-if="model.available === false || model.error"
+                class="mb-2 text-xs text-red-600 bg-red-50 border border-red-100 rounded px-2 py-1"
+              >
+                {{ model.error || "模型调用失败" }}
               </div>
               <div class="space-y-1 text-sm text-gray-500">
                 <div class="flex justify-between">
@@ -431,7 +452,7 @@ TypeScript 的好处是什么？"
                   <th
                     class="px-4 py-3 text-left text-sm font-medium text-gray-500 w-64"
                   >
-                    追问
+                    问题
                   </th>
                   <th
                     v-for="model in compareResults"
@@ -440,8 +461,19 @@ TypeScript 的好处是什么？"
                   >
                     <div class="flex items-center gap-2">
                       <span>{{ model.displayName }}</span>
-                      <span class="text-xs font-normal text-gray-400">
-                        ({{ model.summary.averageScore.toFixed(0) }}分)
+                      <span
+                        class="text-xs font-normal px-2 py-0.5 rounded"
+                        :class="
+                          model.available === false || model.error
+                            ? 'text-red-600 bg-red-100'
+                            : 'text-gray-500 bg-gray-100'
+                        "
+                      >
+                        {{
+                          model.available === false || model.error
+                            ? "调用失败"
+                            : `平均分 ${model.summary.averageScore.toFixed(1)}`
+                        }}
                       </span>
                     </div>
                   </th>
@@ -465,7 +497,14 @@ TypeScript 的好处是什么？"
                     :key="model.model"
                     class="px-4 py-3 align-top"
                   >
-                    <div class="space-y-3">
+                    <div
+                      v-if="model.available === false || model.error"
+                      class="text-sm text-red-600 bg-red-50 border border-red-100 rounded-lg p-3"
+                    >
+                      <div class="font-medium mb-1">该模型本轮调用失败</div>
+                      <div class="text-xs">{{ model.error || "请检查模型配置或网络后重试" }}</div>
+                    </div>
+                    <div v-else class="space-y-3">
                       <!-- 答案内容 -->
                       <div
                         class="text-sm text-gray-600 leading-relaxed max-h-32 overflow-y-auto"
@@ -585,7 +624,7 @@ TypeScript 的好处是什么？"
               >
                 <div class="font-medium">{{ testSet.name }}</div>
                 <div class="text-xs text-gray-400 mt-1">
-                  {{ testSet.questions?.length || 0 }} 条追问
+                  {{ testSet.questions?.length || 0 }} 条问题
                 </div>
               </div>
             </div>
@@ -597,275 +636,38 @@ TypeScript 的好处是什么？"
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from "vue";
+import { onMounted } from "vue";
 import CostAnalysis from "~/components/CostAnalysis.vue";
-// ==================== 模型配置 ====================
-const zhipuModels = [
-  {
-    value: "glm-4-flash",
-    name: "GLM-4-Flash",
-    desc: "快速响应，成本极低，适合高频调用",
-    costPer1KInput: 0.0006,
-    costPer1KOutput: 0.0006,
-  },
-  {
-    value: "glm-4-plus",
-    name: "GLM-4-Plus",
-    desc: "最强大脑，复杂推理，成本较高",
-    costPer1KInput: 0.05,
-    costPer1KOutput: 0.05,
-  },
-  {
-    value: "glm-4-air",
-    name: "GLM-4-Air",
-    desc: "平衡性价比，适中速度",
-    costPer1KInput: 0.005,
-    costPer1KOutput: 0.005,
-  },
-  {
-    value: "glm-4-long",
-    name: "GLM-4-Long",
-    desc: "超长上下文 1M tokens，适合处理长文档",
-    costPer1KInput: 0.005,
-    costPer1KOutput: 0.005,
-  },
-  {
-    value: "glm-3-turbo",
-    name: "GLM-3-Turbo",
-    desc: "经济实惠，简单任务专用",
-    costPer1KInput: 0.001,
-    costPer1KOutput: 0.001,
-  },
-];
+import { openaiModels, qwenModels, zhipuModels } from "~/composables/useCompareModels";
+import { useCompareWorkbench } from "~/composables/useCompareWorkbench";
 
-const openaiModels = [
-  {
-    value: "gpt-3.5-turbo",
-    name: "GPT-3.5 Turbo",
-    desc: "快速响应，成本较低",
-    costPer1KInput: 0.0005,
-    costPer1KOutput: 0.0015,
-  },
-  {
-    value: "gpt-4-turbo",
-    name: "GPT-4 Turbo",
-    desc: "强大，适合复杂任务",
-    costPer1KInput: 0.01,
-    costPer1KOutput: 0.03,
-  },
-  {
-    value: "gpt-4o",
-    name: "GPT-4o",
-    desc: "多模态，最新最强",
-    costPer1KInput: 0.005,
-    costPer1KOutput: 0.015,
-  },
-];
+const {
+  questionsText,
+  selectedModels,
+  loading,
+  compareResults,
+  showTestSetModal,
+  testSets,
+  configStatus,
+  completedCount,
+  questionsList,
+  questionsCount,
+  totalCalls,
+  sortedResults,
+  radarData,
+  selectAllModels,
+  deselectAllModels,
+  clearQuestions,
+  loadFromTestSet,
+  selectTestSet,
+  runCompare,
+  resetCompare,
+  exportCompareResults,
+  copyCompareResults,
+  loadConfigStatus,
+} = useCompareWorkbench();
 
-const qwenModels = [
-  {
-    value: "qwen-turbo",
-    name: "Qwen-Turbo",
-    desc: "快速响应",
-    costPer1KInput: 0.002,
-    costPer1KOutput: 0.002,
-  },
-  {
-    value: "qwen-plus",
-    name: "Qwen-Plus",
-    desc: "平衡性价比",
-    costPer1KInput: 0.004,
-    costPer1KOutput: 0.006,
-  },
-];
-// 添加雷达图数据计算
-const radarData = computed(() => {
-  return compareResults.value.map((model) => {
-    // 计算各维度平均分
-    const avgAccuracy =
-      model.answers.reduce(
-        (sum: number, a: any) => sum + (a.dimensions?.accuracy || 0),
-        0,
-      ) / model.answers.length;
-    const avgCompleteness =
-      model.answers.reduce(
-        (sum: number, a: any) => sum + (a.dimensions?.completeness || 0),
-        0,
-      ) / model.answers.length;
-    const avgRelevance =
-      model.answers.reduce(
-        (sum: number, a: any) => sum + (a.dimensions?.relevance || 0),
-        0,
-      ) / model.answers.length;
-    const avgClarity =
-      model.answers.reduce(
-        (sum: number, a: any) => sum + (a.dimensions?.clarity || 0),
-        0,
-      ) / model.answers.length;
-
-    return {
-      name: model.displayName,
-      value: [avgAccuracy, avgCompleteness, avgRelevance, avgClarity],
-      dimensions: ["准确性", "完整性", "相关性", "清晰度"],
-    };
-  });
-});
-// ==================== 状态 ====================
-const questionsText = ref("");
-const selectedModels = ref<string[]>(["glm-4-flash", "glm-4-plus"]);
-const loading = ref(false);
-const compareResults = ref<any[]>([]);
-const showTestSetModal = ref(false);
-const testSets = ref<any[]>([]);
-
-// ==================== 计算属性 ====================
-const questionsCount = computed(() => {
-  return questionsText.value.split("\n").filter((q) => q.trim()).length;
-});
-
-const questionsList = computed(() => {
-  return questionsText.value.split("\n").filter((q) => q.trim());
-});
-
-const configStatus = ref({ zhipu: false, openai: false, dashscope: false });
-
-const totalCalls = computed(() => {
-  return selectedModels.value.length * questionsCount.value;
-});
-
-const completedCount = ref(0);
-
-const sortedResults = computed(() => {
-  return [...compareResults.value].sort(
-    (a, b) => b.summary.averageScore - a.summary.averageScore,
-  );
-});
-
-// ==================== 方法 ====================
-const getModelDisplayName = (modelValue: string) => {
-  const allModels = [...zhipuModels, ...openaiModels, ...qwenModels];
-  const model = allModels.find((m) => m.value === modelValue);
-  return model?.name || modelValue;
-};
-
-const selectAllModels = () => {
-  selectedModels.value = zhipuModels.map((m) => m.value);
-};
-
-const deselectAllModels = () => {
-  selectedModels.value = [];
-};
-
-const clearQuestions = () => {
-  questionsText.value = "";
-};
-
-const loadFromTestSet = async () => {
-  try {
-    testSets.value = await $fetch("/api/test-sets");
-    showTestSetModal.value = true;
-  } catch (error) {
-    console.error("加载测试集失败:", error);
-  }
-};
-
-const selectTestSet = (testSet: any) => {
-  if (testSet.questions && Array.isArray(testSet.questions)) {
-    questionsText.value = testSet.questions.join("\n");
-  }
-  showTestSetModal.value = false;
-};
-
-const runCompare = async () => {
-  const questions = questionsText.value.split("\n").filter((q) => q.trim());
-
-  if (questions.length === 0) {
-    alert("请至少输入一条追问");
-    return;
-  }
-
-  if (selectedModels.value.length < 2) {
-    alert("请至少选择 2 个模型参与横评");
-    return;
-  }
-
-  loading.value = true;
-  completedCount.value = 0;
-  compareResults.value = [];
-
-  try {
-    const response = await $fetch("/api/compare", {
-      method: "POST",
-      body: {
-        questions,
-        models: selectedModels.value,
-      },
-    });
-
-    compareResults.value = response.models.map((m: any) => ({
-      ...m,
-      displayName: getModelDisplayName(m.model),
-    }));
-  } catch (error: any) {
-    console.error("对比失败:", error);
-    alert(`横评失败: ${error.data?.message || error.message}`);
-  } finally {
-    loading.value = false;
-  }
-};
-
-const resetCompare = () => {
-  compareResults.value = [];
-  questionsText.value = "";
-};
-
-const exportCompareResults = () => {
-  const data = {
-    timestamp: new Date().toISOString(),
-    questions: questionsList.value,
-    models: compareResults.value.map((m) => ({
-      model: m.model,
-      displayName: m.displayName,
-      summary: m.summary,
-      answers: m.answers,
-    })),
-  };
-
-  const blob = new Blob([JSON.stringify(data, null, 2)], {
-    type: "application/json",
-  });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = `compare_${Date.now()}.json`;
-  a.click();
-  URL.revokeObjectURL(url);
-};
-
-const copyCompareResults = () => {
-  const text = compareResults.value
-    .map((m) => {
-      return `${m.displayName}: ${m.summary.averageScore.toFixed(1)}分`;
-    })
-    .join("\n");
-
-  navigator.clipboard.writeText(text);
-  alert("已复制汇总结果到剪贴板");
-};
-
-// ==================== 生命周期 ====================
-onMounted(async () => {
-  try {
-    const status = await $fetch<{
-      zhipu: boolean;
-      openai: boolean;
-      dashscope: boolean;
-    }>("/api/config-status");
-    configStatus.value = status;
-  } catch (e) {
-    console.error("加载配置状态失败:", e);
-  }
-});
+onMounted(loadConfigStatus);
 </script>
 
 <style scoped>

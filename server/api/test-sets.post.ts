@@ -1,3 +1,7 @@
+/**
+ * POST /api/test-sets
+ * 创建用例：名称、可选描述、问题字符串数组。
+ */
 import { z } from 'zod'
 import { prisma } from '~/server/utils/db'
 
