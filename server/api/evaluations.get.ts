@@ -24,11 +24,11 @@ export default defineEventHandler(async (event) => {
   ])
 
   // 格式化返回数据
-  const formattedEvaluations = evaluations.map((evalItem) => {
+  const formattedEvaluations = evaluations.map((evalItem: any) => {
     const metrics = evalItem.metrics as any
     return {
       id: evalItem.id,
-      name: evalItem.testSet?.name || `评测 ${evalItem.id}`,
+      name: evalItem.testSet?.name || `比言 ${evalItem.id}`,
       createdAt: evalItem.createdAt,
       totalQuestions: metrics?.totalQuestions || 0,
       averageScore: metrics?.averageScore || 0,

@@ -14,7 +14,7 @@ export default defineEventHandler(async (event) => {
   if (!evaluation) {
     throw createError({
       statusCode: 404,
-      message: '评测记录不存在',
+      message: '记录不存在',
     })
   }
 

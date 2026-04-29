@@ -5,9 +5,9 @@
       <div class="max-w-7xl mx-auto px-4 py-4">
         <div class="flex items-center justify-between">
           <div>
-            <h1 class="text-2xl font-bold text-gray-800">⚖️ 模型对比</h1>
+            <h1 class="text-2xl font-bold text-gray-800">横评</h1>
             <p class="text-gray-500 text-sm mt-1">
-              并排对比多个 AI 模型的表现，找到最适合你的模型
+              同一批题目，并排看清各家回答与得分，便于拍板选型
             </p>
           </div>
           <button
@@ -24,24 +24,24 @@
       <!-- 配置区 -->
       <div class="bg-white rounded-lg shadow-sm p-6 mb-8">
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          <!-- 左侧：问题输入 -->
+          <!-- 左侧：追问输入 -->
           <div>
             <div class="flex items-center justify-between mb-2">
               <label class="block text-sm font-medium text-gray-700">
-                📝 测试问题
+                📝 追问
               </label>
               <button
                 @click="loadFromTestSet"
                 class="text-xs text-blue-500 hover:text-blue-600"
               >
-                从测试集加载
+                从用例载入
               </button>
             </div>
             <textarea
               v-model="questionsText"
               rows="8"
               class="w-full border border-gray-300 rounded-lg p-3 font-mono text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder="每行一个问题，例如：
+              placeholder="每行一条追问（将同时发给各模型），例如：
 什么是 Vue 3 的 Composition API？
 解释一下 JavaScript 的闭包
 React 和 Vue 有什么区别？
@@ -50,7 +50,7 @@ TypeScript 的好处是什么？"
             />
             <div class="flex justify-between mt-2">
               <div class="text-xs text-gray-400">
-                共 {{ questionsCount }} 个问题
+                共 {{ questionsCount }} 条追问
               </div>
               <button
                 @click="clearQuestions"
@@ -66,7 +66,7 @@ TypeScript 的好处是什么？"
           <div>
             <div class="flex items-center justify-between mb-2">
               <label class="block text-sm font-medium text-gray-700">
-                🧠 选择对比模型
+                🧠 选择参与横评的模型
               </label>
               <div class="flex gap-2">
                 <button
@@ -247,7 +247,7 @@ TypeScript 的好处是什么？"
             </div>
 
             <div class="mt-4 text-xs text-gray-400">
-              已选择 {{ selectedModels.length }} 个模型，至少选择 2 个进行对比
+              已选 {{ selectedModels.length }} 个模型，至少 2 个才能横评
             </div>
           </div>
         </div>
@@ -261,10 +261,10 @@ TypeScript 的好处是什么？"
             "
             class="flex-1 bg-blue-500 text-white py-3 rounded-lg font-medium hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
-            <span v-if="!loading">🚀 开始对比评测</span>
+            <span v-if="!loading">🚀 开始横评</span>
             <span v-else class="flex items-center justify-center gap-2">
               <span class="animate-spin">⏳</span>
-              对比评测中... ({{ completedCount }}/{{ totalCalls }})
+              横评中... ({{ completedCount }}/{{ totalCalls }})
             </span>
           </button>
           <button
@@ -282,7 +282,7 @@ TypeScript 的好处是什么？"
         <div class="bg-white rounded-lg shadow-sm p-6">
           <h2 class="text-lg font-medium mb-4 flex items-center gap-2">
             📡 能力雷达图
-            <span class="text-xs text-gray-400">多维度能力对比</span>
+            <span class="text-xs text-gray-400">多维度得分一览</span>
           </h2>
           <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <!-- 雷达图 -->
@@ -304,7 +304,7 @@ TypeScript 的好处是什么？"
                 <li class="flex items-center gap-2">
                   <span class="w-3 h-3 bg-green-500 rounded-full"></span>
                   <span class="font-medium">完整性 (25%)</span>
-                  <span class="text-gray-400">- 是否覆盖问题所有方面</span>
+                  <span class="text-gray-400">- 是否覆盖追问涉及的要点</span>
                 </li>
                 <li class="flex items-center gap-2">
                   <span class="w-3 h-3 bg-yellow-500 rounded-full"></span>
@@ -330,7 +330,7 @@ TypeScript 的好处是什么？"
         <!-- 汇总对比卡片 -->
         <div class="bg-white rounded-lg shadow-sm p-6">
           <h2 class="text-lg font-medium mb-4 flex items-center gap-2">
-            📊 模型汇总对比
+            📊 横评汇总
             <span class="text-xs text-gray-400">(按综合得分排序)</span>
           </h2>
           <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -372,7 +372,7 @@ TypeScript 的好处是什么？"
                   >
                 </div>
                 <div class="flex justify-between">
-                  <span>📝 回答问题数</span>
+                  <span>📝 已答条数</span>
                   <span>{{ model.answers.length }}</span>
                 </div>
               </div>
@@ -407,7 +407,7 @@ TypeScript 的好处是什么？"
           <div
             class="border-b px-6 py-3 bg-gray-50 flex justify-between items-center"
           >
-            <h2 class="font-medium text-gray-700">📝 详细对比结果</h2>
+            <h2 class="font-medium text-gray-700">📝 横评明细</h2>
             <div class="flex gap-2">
               <button
                 @click="exportCompareResults"
@@ -431,7 +431,7 @@ TypeScript 的好处是什么？"
                   <th
                     class="px-4 py-3 text-left text-sm font-medium text-gray-500 w-64"
                   >
-                    问题
+                    追问
                   </th>
                   <th
                     v-for="model in compareResults"
@@ -554,14 +554,14 @@ TypeScript 的好处是什么？"
         </div>
       </div>
 
-      <!-- 测试集选择模态框 -->
+      <!-- 用例选择 -->
       <div
         v-if="showTestSetModal"
         class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
       >
         <div class="bg-white rounded-lg shadow-xl w-full max-w-2xl mx-4">
           <div class="border-b px-6 py-4 flex justify-between items-center">
-            <h3 class="text-lg font-medium">选择测试集</h3>
+            <h3 class="text-lg font-medium">选择用例</h3>
             <button
               @click="showTestSetModal = false"
               class="text-gray-400 hover:text-gray-600"
@@ -574,7 +574,7 @@ TypeScript 的好处是什么？"
               v-if="testSets.length === 0"
               class="text-center text-gray-400 py-8"
             >
-              暂无测试集，请先在首页创建
+              暂无用例，请先到「用例」里新建
             </div>
             <div class="space-y-2">
               <div
@@ -585,7 +585,7 @@ TypeScript 的好处是什么？"
               >
                 <div class="font-medium">{{ testSet.name }}</div>
                 <div class="text-xs text-gray-400 mt-1">
-                  {{ testSet.questions?.length || 0 }} 个问题
+                  {{ testSet.questions?.length || 0 }} 条追问
                 </div>
               </div>
             </div>
@@ -780,12 +780,12 @@ const runCompare = async () => {
   const questions = questionsText.value.split("\n").filter((q) => q.trim());
 
   if (questions.length === 0) {
-    alert("请至少输入一个问题");
+    alert("请至少输入一条追问");
     return;
   }
 
   if (selectedModels.value.length < 2) {
-    alert("请至少选择 2 个模型进行对比");
+    alert("请至少选择 2 个模型参与横评");
     return;
   }
 
@@ -808,7 +808,7 @@ const runCompare = async () => {
     }));
   } catch (error: any) {
     console.error("对比失败:", error);
-    alert(`对比失败: ${error.data?.message || error.message}`);
+    alert(`横评失败: ${error.data?.message || error.message}`);
   } finally {
     loading.value = false;
   }

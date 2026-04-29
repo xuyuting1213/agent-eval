@@ -44,7 +44,7 @@ export default defineEventHandler(async (event) => {
   try {
     results = await batchCallOpenAI(questions, model)
   } catch (error) {
-    const message = error instanceof Error ? error.message : '评测服务调用失败'
+    const message = error instanceof Error ? error.message : '模型服务调用失败'
     throw createError({
       statusCode: 502,
       statusMessage: 'Evaluate upstream error',

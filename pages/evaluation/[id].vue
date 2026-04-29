@@ -6,7 +6,7 @@
           <button @click="navigateTo('/history')" class="text-gray-500 hover:text-gray-700">
             ← 返回
           </button>
-          <h1 class="text-2xl font-bold text-gray-800">评测详情</h1>
+          <h1 class="text-2xl font-bold text-gray-800">记录详情</h1>
         </div>
       </div>
     </header>
@@ -20,7 +20,7 @@
       <div v-else-if="evaluation" class="space-y-6">
         <!-- 概览卡片 -->
         <div class="bg-white rounded-lg shadow-sm p-6">
-          <h2 class="text-lg font-medium mb-4">📊 评测概览</h2>
+          <h2 class="text-lg font-medium mb-4">📊 概览</h2>
           <div class="grid grid-cols-4 gap-4">
             <div>
               <div class="text-xs text-gray-400">问题数量</div>
@@ -105,7 +105,7 @@
       </div>
 
       <div v-else class="text-center py-12 text-gray-400">
-        评测记录不存在
+        未找到这条记录
       </div>
     </main>
   </div>

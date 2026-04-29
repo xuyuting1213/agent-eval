@@ -4,6 +4,19 @@ export default defineNuxtConfig({
   devtools: { enabled: true },
   modules: ['@nuxtjs/tailwindcss'],
 
+  app: {
+    head: {
+      title: '比言',
+      meta: [
+        {
+          name: 'description',
+          content:
+            '对齐同一批追问，对比各模型回答，按统一维度自动打分并留痕；支持工作台单模型、横评多模型与管理用例。',
+        },
+      ],
+    },
+  },
+
   runtimeConfig: {
     // Server-only runtime config.
     apiSecret: process.env.NUXT_API_SECRET || '',

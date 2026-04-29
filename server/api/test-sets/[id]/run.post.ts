@@ -15,7 +15,7 @@ export default defineEventHandler(async (event) => {
   if (!testSet) {
     throw createError({
       statusCode: 404,
-      message: '测试集不存在'
+      message: '用例不存在'
     })
   }
   

@@ -25,7 +25,7 @@ export default defineEventHandler(async () => {
   // 测试插入一条数据
   const test = await prisma.testSet.create({
     data: {
-      name: '测试集',
+      name: '用例',
       questions: [],
     },
   })

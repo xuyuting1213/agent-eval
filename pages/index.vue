@@ -3,9 +3,9 @@
     <!-- 头部 -->
     <header class="bg-white shadow-sm border-b">
       <div class="max-w-7xl mx-auto px-4 py-4">
-        <h1 class="text-2xl font-bold text-gray-800">🤖 AI Agent 评测平台</h1>
+        <h1 class="text-2xl font-bold text-gray-800">比言 · 工作台</h1>
         <p class="text-gray-500 text-sm mt-1">
-          对比不同 AI 模型的表现，选择最适合你的 Agent
+          同一批追问下对比各模型回答，按统一维度打分，方便选型与留痕
         </p>
       </div>
     </header>
@@ -17,13 +17,13 @@
           <!-- 问题输入 -->
           <div class="bg-white rounded-lg shadow-sm p-6">
             <label class="block text-sm font-medium text-gray-700 mb-2">
-              📝 测试问题
-              <span class="text-gray-400 text-xs ml-2">每行一个问题</span>
+              📝 追问
+              <span class="text-gray-400 text-xs ml-2">每行一条（会发给模型）</span>
               <NuxtLink
                 :to="{ path: '/test-sets', query: { model: selectedModel } }"
                 class="text-sm text-blue-500 hover:text-blue-600"
               >
-                📋 从测试集加载
+                📋 从用例载入
               </NuxtLink>
             </label>
             <textarea
@@ -36,7 +36,7 @@
 React 和 Vue 有什么区别？"
             />
             <div class="text-xs text-gray-400 mt-2">
-              共 {{ questionCount }} 个问题
+              共 {{ questionCount }} 条追问
             </div>
           </div>
 
@@ -57,7 +57,7 @@ React 和 Vue 有什么区别？"
                 />
                 <div>
                   <div class="font-medium">GLM-4-Flash</div>
-                  <div class="text-xs text-gray-400">速度快，适合批量评测</div>
+                  <div class="text-xs text-gray-400">题量多、要快速出结果时更合适</div>
                 </div>
               </label>
               <label
@@ -85,9 +85,9 @@ React 和 Vue 有什么区别？"
             :disabled="loading || questionCount === 0"
             class="w-full bg-blue-500 text-white py-3 rounded-lg font-medium hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
-            <span v-if="!loading">🚀 开始评测</span>
+            <span v-if="!loading">🚀 开始打分</span>
             <span v-else
-              >⏳ 评测中... ({{ completedCount }}/{{ questionCount }})</span
+              >⏳ 打分中... ({{ completedCount }}/{{ questionCount }})</span
             >
           </button>
         </div>
@@ -119,14 +119,14 @@ React 和 Vue 有什么区别？"
           <!-- 结果列表 -->
           <div class="bg-white rounded-lg shadow-sm overflow-hidden">
             <div class="border-b px-6 py-3 bg-gray-50">
-              <h2 class="font-medium text-gray-700">📊 评测结果</h2>
+              <h2 class="font-medium text-gray-700">📊 打分结果</h2>
             </div>
 
             <div
               v-if="results.length === 0 && !loading"
               class="p-12 text-center text-gray-400"
             >
-              点击「开始评测」查看结果
+              点击「开始打分」查看结果
             </div>
 
             <div
@@ -153,7 +153,7 @@ React 和 Vue 有什么区别？"
                   <div class="flex-1 space-y-3">
                     <!-- 问题 -->
                     <div class="font-medium text-gray-800">
-                      {{ submittedQuestions[idx] || `问题 ${idx + 1}` }}
+                      {{ submittedQuestions[idx] || `追问 ${idx + 1}` }}
                     </div>
 
                     <!-- 答案 -->
@@ -254,7 +254,7 @@ React 和 Vue 有什么区别？"
               @click="saveEvaluation"
               class="flex-1 bg-green-500 text-white py-2 rounded-lg font-medium hover:bg-green-600 transition-colors"
             >
-              💾 保存本次评测
+              💾 保存本次结果
             </button>
             <button
               @click="exportResults"
@@ -330,7 +330,7 @@ const runEvaluation = async () => {
     .filter(Boolean);
 
   if (questions.length === 0) {
-    alert("请至少输入一个问题");
+    alert("请至少输入一条追问");
     return;
   }
 
@@ -352,7 +352,7 @@ const runEvaluation = async () => {
     evaluationId.value = response.id ?? null;
   } catch (error: any) {
     console.error("评测失败:", error);
-    alert(`评测失败: ${error.data?.message || error.message}`);
+    alert(`打分失败: ${error.data?.message || error.message}`);
     results.value = [];
   } finally {
     loading.value = false;
@@ -362,7 +362,7 @@ const runEvaluation = async () => {
 // 保存评测
 const saveEvaluation = async () => {
   if (!evaluationId.value) {
-    alert("没有可保存的评测结果");
+    alert("暂无可保存的结果");
     return;
   }
 
@@ -370,7 +370,7 @@ const saveEvaluation = async () => {
     await $fetch(`/api/evaluations/${evaluationId.value}/save`, {
       method: "POST",
       body: {
-        name: `评测_${new Date().toLocaleString()}`,
+        name: `比言_${new Date().toLocaleString()}`,
       },
     });
     alert("保存成功！可以在历史记录中查看");

@@ -1,6 +1,6 @@
 # 后端运作流程说明
 
-本文描述本仓库（Nuxt 3 + Nitro + Prisma + LangChain 服务层）**服务端**的请求路径、分层职责与主要业务链路。
+产品名：**比言**（对比模型回答并打分）。本文描述本仓库服务端（Nuxt Nitro + Prisma + 大模型调用层）的请求路径、分层职责与主要业务链路。
 
 ---
 
@@ -69,11 +69,11 @@ export default defineEventHandler(async (event) => {
 | GET | `/api/provider-status` | `provider-status.get.ts` | 提供商可用性相关状态 |
 | POST | `/api/evaluate` | `evaluate.post.ts` | 单模型评测：答题 → 评分 → 写 `Evaluation` |
 | POST | `/api/compare` | `compare.post.ts` | 多模型对比：并行答题与评分 |
-| GET | `/api/test-sets` | `test-sets.get.ts` | 测试集列表 |
-| POST | `/api/test-sets` | `test-sets.post.ts` | 创建测试集 |
-| GET | `/api/test-sets/:id` | `test-sets/[id].get.ts` | 单个测试集详情 |
-| DELETE | `/api/test-sets/:id` | `test-sets/[id].delete.ts` | 删除测试集 |
-| POST | `/api/test-sets/:id/run` | `test-sets/[id]/run.post.ts` | 对指定测试集跑一轮评测并落库 |
+| GET | `/api/test-sets` | `test-sets.get.ts` | 用例列表（路由名仍为 `test-sets`） |
+| POST | `/api/test-sets` | `test-sets.post.ts` | 创建用例 |
+| GET | `/api/test-sets/:id` | `test-sets/[id].get.ts` | 单个用例详情 |
+| DELETE | `/api/test-sets/:id` | `test-sets/[id].delete.ts` | 删除用例 |
+| POST | `/api/test-sets/:id/run` | `test-sets/[id]/run.post.ts` | 对指定用例跑一轮打分并落库 |
 | GET | `/api/evaluations` | `evaluations.get.ts` | 评测历史分页列表 |
 | GET | `/api/evaluations/:id` | `evaluations/[id].get.ts` | 单条评测详情 |
 | POST | `/api/evaluations/:id/save` | `evaluations/[id]/save.post.ts` | 保存/标记评测（若业务有使用） |
@@ -128,13 +128,13 @@ export default defineEventHandler(async (event) => {
 3. 对每个模型的答案集调用 `batchScore`。
 4. 组装为「按模型维度」的对比结果返回。
 
-### 6.3 测试集一键评测：`POST /api/test-sets/:id/run`
+### 6.3 用例一键打分：`POST /api/test-sets/:id/run`
 
 1. `findUnique` 读取 `TestSet` 与题目列表。
 2. 调用批量问答与评分（与评测主流程类似）。
 3. 创建 `Evaluation` 并返回摘要与明细（供前端展示）。
 
-### 6.4 测试集 CRUD
+### 6.4 用例 CRUD
 
 - `GET/POST /api/test-sets`、`GET/DELETE /api/test-sets/:id`：直接通过 Prisma 操作 `TestSet` 表。
 
@@ -147,7 +147,7 @@ export default defineEventHandler(async (event) => {
 
 ## 7. 数据模型（Prisma）
 
-- **TestSet**：评测问题集；`questions` 为 Json（通常为字符串数组）。
+- **TestSet**：用例（一批追问）；`questions` 为 Json（通常为字符串数组）。
 - **Evaluation**：一次评测结果；关联 `testSetId`；`results`、`metrics` 为 Json。
 
 数据库连接字符串来自环境变量 **`DATABASE_URL`**；客户端在 `server/utils/db.ts` 中做单例与开发环境缓存。

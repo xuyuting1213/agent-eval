@@ -3,8 +3,8 @@
     <!-- 头部 -->
     <header class="bg-white shadow-sm border-b">
       <div class="max-w-7xl mx-auto px-4 py-4">
-        <h1 class="text-2xl font-bold text-gray-800">📜 评测历史</h1>
-        <p class="text-gray-500 text-sm mt-1">查看和管理所有评测记录</p>
+        <h1 class="text-2xl font-bold text-gray-800">📜 记录</h1>
+        <p class="text-gray-500 text-sm mt-1">历次对比与打分结果，随时回看</p>
       </div>
     </header>
 
@@ -15,7 +15,7 @@
           <input
             v-model="searchKeyword"
             type="text"
-            placeholder="搜索评测内容..."
+            placeholder="搜索记录..."
             class="flex-1 border rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           />
           <select
@@ -29,7 +29,7 @@
         </div>
       </div>
 
-      <!-- 评测列表 -->
+      <!-- 记录列表 -->
       <div class="space-y-4">
         <div
           v-for="evalItem in evaluations"
@@ -64,8 +64,8 @@
         <!-- 空状态 -->
         <div v-if="evaluations.length === 0 && !loading" class="bg-white rounded-lg shadow-sm p-12 text-center text-gray-400">
           <div class="text-4xl mb-2">📭</div>
-          <p>暂无评测记录</p>
-          <p class="text-sm mt-1">去<a href="/" class="text-blue-500">首页</a>开始第一次评测</p>
+          <p>暂无记录</p>
+          <p class="text-sm mt-1">去<a href="/" class="text-blue-500">工作台</a>开始第一次打分</p>
         </div>
 
         <!-- 加载中 -->

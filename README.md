@@ -1,90 +1,39 @@
-# Nuxt Minimal Starter
+# 比言
 
-Look at the [Nuxt documentation](https://nuxt.com/docs/getting-started/introduction) to learn more.
+对齐**同一批追问**，对比各**模型回答**，按统一维度**自动打分**并留痕。适合选型、质检与内部分享结论。
 
-## Setup
+- **工作台**：单模型批量回答 + 打分  
+- **横评**：多模型并排对比与得分  
+- **用例**：保存常用追问组合，一键载入  
+- **记录**：历史打分与对比结果  
 
-Make sure to install dependencies:
+## 本地运行
 
 ```bash
-# npm
 npm install
-
-# pnpm
-pnpm install
-
-# yarn
-yarn install
-
-# bun
-bun install
-```
-
-## Development Server
-
-Start the development server on `http://localhost:3000`:
-
-```bash
-# npm
 npm run dev
-
-# pnpm
-pnpm dev
-
-# yarn
-yarn dev
-
-# bun
-bun run dev
 ```
 
-## Production
+浏览器打开 `http://localhost:3000`。
 
-Build the application for production:
+## 构建与预览
 
 ```bash
-# npm
 npm run build
-
-# pnpm
-pnpm build
-
-# yarn
-yarn build
-
-# bun
-bun run build
-```
-
-Locally preview production build:
-
-```bash
-# npm
 npm run preview
-
-# pnpm
-pnpm preview
-
-# yarn
-yarn preview
-
-# bun
-bun run preview
 ```
 
-Check out the [deployment documentation](https://nuxt.com/docs/getting-started/deployment) for more information.
+## 环境与数据
 
-## Delivery and Review Workflow
+- 复制 [`.env.example`](.env.example) 为 `.env`，填写各模型 Key 与 **`DATABASE_URL`**。
+- 本项目默认使用 **PostgreSQL**。若用仓库里的 `docker-compose.yml` 起库，映射端口是 **`5433`**（不是 5432），`DATABASE_URL` 需与之对应。
+- 首次连库后执行迁移：`npx prisma migrate deploy`（或开发环境 `npx prisma db push`）。
+- 后端与数据流说明见 [`docs/backend-flow.md`](docs/backend-flow.md)。
 
-To make each implementation step reviewable and traceable, use:
+## 交付与文档
 
-- `docs/ROADMAP.md`: project phase plan and progress
-- `docs/WORKLOG.md`: chronological implementation log
-- `docs/REVIEW_CHECKLIST.md`: review criteria for each step
+- `docs/ROADMAP.md`：阶段规划  
+- `docs/WORKLOG.md`：实现记录  
+- `docs/REVIEW_CHECKLIST.md`：自检清单  
 
-Recommended workflow for every change:
-
-1. Confirm target step in `docs/ROADMAP.md`
-2. Implement a small, focused change
-3. Update `docs/WORKLOG.md` with goal, files touched, and validation
-4. Review with `docs/REVIEW_CHECKLIST.md`
+更多框架级说明可参考 [Nuxt 文档](https://nuxt.com/docs/getting-started/introduction)。
