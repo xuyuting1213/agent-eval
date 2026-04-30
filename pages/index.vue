@@ -9,8 +9,8 @@
       <!-- ... 头部内容不变 ... -->
     </header>
 
-    <main class="mx-auto max-w-[1600px] px-6 py-6">
-      <div class="grid grid-cols-1 xl:grid-cols-[400px_1fr] gap-6">
+    <main class="mx-auto max-w-[1720px] px-6 py-6">
+      <div class="grid grid-cols-1 xl:grid-cols-[440px_minmax(0,1fr)] gap-6">
         <!-- ========== 左侧配置面板 ========== -->
         <aside class="space-y-5">
           <!-- 🚀 运行控制卡片 - 移到最上面 -->
@@ -51,7 +51,7 @@
                     <span v-else>⏳ 评测中</span>
                   </button>
                   <div class="flex items-center justify-between">
-                    <div class="text-xs text-slate-500">联网搜索</div>
+                    <div class="text-xs text-slate-500">🔍 启用联网搜索</div>
                     <n-switch v-model:value="enableTools" size="small" />
                   </div>
                   <button
@@ -185,7 +185,7 @@ React 和 Vue 有什么区别？"
         </aside>
 
         <!-- ========== 右侧结果面板（保持不变） ========== -->
-        <section class="space-y-5">
+        <section class="space-y-5 xl:min-h-[calc(100vh-130px)]">
           <!-- 统计概览卡片 -->
           <div v-if="results.length > 0" class="grid grid-cols-3 gap-4">
             <div
@@ -228,7 +228,7 @@ React 和 Vue 有什么区别？"
 
           <!-- 结果列表 -->
           <div
-            class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden"
+            class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden min-h-[68vh] flex flex-col"
           >
             <div
               class="px-5 py-3.5 border-b border-slate-100 bg-gradient-to-r from-slate-50 to-white flex justify-between items-center"
@@ -254,7 +254,7 @@ React 和 Vue 有什么区别？"
               </div>
             </div>
 
-            <div class="p-5">
+            <div class="p-5 flex-1">
               <EvaluateSkeleton v-if="loading && results.length === 0" />
 
               <div
@@ -267,7 +267,7 @@ React 和 Vue 有什么区别？"
                 </div>
               </div>
 
-              <div v-else class="space-y-4 max-h-[74vh] overflow-y-auto pr-2">
+              <div v-else class="space-y-4 min-h-[58vh] max-h-[74vh] overflow-y-auto pr-2">
                 <!-- 结果卡片内容不变 -->
                 <div
                   v-for="(result, idx) in results"
@@ -312,23 +312,6 @@ React 和 Vue 有什么区别？"
                         class="text-xs text-red-500 bg-red-50 px-2 py-0.5 rounded-full"
                         >❌ 失败</span
                       >
-                      <span
-                        v-if="enableTools && result.streamStatus === 'done'"
-                        class="text-xs px-2 py-0.5 rounded-full"
-                        :class="{
-                          'text-indigo-700 bg-indigo-100': result.toolSource === 'mcp',
-                          'text-amber-700 bg-amber-100': result.toolSource === 'tavily',
-                          'text-slate-600 bg-slate-100': !result.toolSource || result.toolSource === 'none',
-                        }"
-                      >
-                        {{
-                          result.toolSource === "mcp"
-                            ? "🌐 MCP 已调用"
-                            : result.toolSource === "tavily"
-                              ? "🌐 降级 Tavily"
-                              : "🌐 未调用 MCP"
-                        }}
-                      </span>
                       <span
                         v-if="result.score"
                         class="text-sm font-semibold"
@@ -377,6 +360,30 @@ React 和 Vue 有什么区别？"
                       >
                       <span class="text-xs bg-white px-2 py-1 rounded border"
                         >⏱️ 耗时: {{ result.duration || 0 }}ms</span
+                      >
+                      <span
+                        class="text-xs bg-white px-2 py-1 rounded border"
+                        :class="
+                          result.hasToolCall
+                            ? 'border-emerald-200 text-emerald-700'
+                            : 'border-slate-200 text-slate-500'
+                        "
+                        >🔍 工具调用: {{ result.hasToolCall ? "是" : "否" }}</span
+                      >
+                      <span
+                        v-if="result.hasToolCall"
+                        class="text-xs bg-white px-2 py-1 rounded border border-indigo-200 text-indigo-700"
+                        >🧰 调用次数: {{ result.toolCallCount || 0 }}</span
+                      >
+                      <span
+                        v-if="result.hasToolCall"
+                        class="text-xs bg-white px-2 py-1 rounded border border-indigo-200 text-indigo-700"
+                        >🔗 来源数: {{ result.toolSourceCount || 0 }}</span
+                      >
+                      <span
+                        v-if="result.hasToolCall"
+                        class="text-xs bg-white px-2 py-1 rounded border border-indigo-200 text-indigo-700"
+                        >⭐ 平均相关度: {{ (result.toolAvgScore || 0).toFixed(3) }}</span
                       >
                       <span
                         v-if="result.promptTokens"
@@ -450,15 +457,29 @@ import EvaluateSkeleton from "~/components/skeletons/EvaluateSkeleton.vue";
 import { modelOptions } from "~/composables/useModelOptions";
 import { useEvaluateRunner } from "~/composables/useEvaluateRunner";
 import {
+  NButton,
+  NCard,
+  NCollapse,
+  NCollapseItem,
+  NEmpty,
+  NGi,
+  NGrid,
+  NInput,
+  NRadio,
+  NRadioGroup,
+  NSpace,
+  NStatistic,
+  NTag,
+  NText,
   useMessage,
   NSwitch,
 } from "naive-ui";
 const enableTools = ref(false);
 const message = useMessage();
 const questionsText = ref(
-  "近一周ai圈大事，帮我根据日期列出。\n五一上海天气如何？",
+  "什么是 Vue 3 的 Composition API？\n解释一下 JavaScript 的闭包\nReact 和 Vue 有什么区别？",
 );
-const selectedModel = ref("glm-4-flash");
+const selectedModel = ref("glm-4.7-flash");
 const initialLoading = ref(true);
 
 const {

@@ -7,6 +7,7 @@ export interface CompareModelOption {
 }
 
 export const zhipuModels: CompareModelOption[] = [
+  { value: "glm-4.7-flash", name: "GLM-4.7-Flash", desc: "新一代免费主力模型，适合高频实时任务", costPer1KInput: 0, costPer1KOutput: 0 },
   { value: "glm-4-flash", name: "GLM-4-Flash", desc: "快速响应，成本极低，适合高频调用", costPer1KInput: 0.0006, costPer1KOutput: 0.0006 },
   { value: "glm-4-plus", name: "GLM-4-Plus", desc: "最强大脑，复杂推理，成本较高", costPer1KInput: 0.05, costPer1KOutput: 0.05 },
   { value: "glm-4-air", name: "GLM-4-Air", desc: "平衡性价比，适中速度", costPer1KInput: 0.005, costPer1KOutput: 0.005 },
@@ -15,13 +16,13 @@ export const zhipuModels: CompareModelOption[] = [
 ];
 
 export const openaiModels: CompareModelOption[] = [
-  { value: "gpt-3.5-turbo", name: "GPT-3.5 Turbo", desc: "快速响应，成本较低", costPer1KInput: 0.0005, costPer1KOutput: 0.0015 },
+  { value: "gpt-4o-mini", name: "GPT-4o Mini", desc: "低成本主力，适合高并发工具调用", costPer1KInput: 0.00015, costPer1KOutput: 0.0006 },
   { value: "gpt-4-turbo", name: "GPT-4 Turbo", desc: "强大，适合复杂任务", costPer1KInput: 0.01, costPer1KOutput: 0.03 },
   { value: "gpt-4o", name: "GPT-4o", desc: "多模态，最新最强", costPer1KInput: 0.005, costPer1KOutput: 0.015 },
 ];
 
 export const qwenModels: CompareModelOption[] = [
-  { value: "qwen-turbo", name: "Qwen-Turbo", desc: "快速响应", costPer1KInput: 0.002, costPer1KOutput: 0.002 },
+  { value: "qwen3.5-plus", name: "Qwen3.5-Plus", desc: "新一代高性价比模型，支持超长上下文", costPer1KInput: 0.00011, costPer1KOutput: 0.00033 },
   { value: "qwen-plus", name: "Qwen-Plus", desc: "平衡性价比", costPer1KInput: 0.004, costPer1KOutput: 0.006 },
 ];
 

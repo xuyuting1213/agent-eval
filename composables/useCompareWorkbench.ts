@@ -47,7 +47,7 @@ interface ConfigStatus {
 export const useCompareWorkbench = () => {
   const { zhipuModels, getModelDisplayName } = useCompareModels();
   const questionsText = ref("");
-  const selectedModels = ref<string[]>(["glm-4-flash", "glm-4-plus"]);
+  const selectedModels = ref<string[]>(["glm-4.7-flash", "glm-4-plus"]);
   const loading = ref(false);
   const compareResults = ref<CompareModelResult[]>([]);
   const showTestSetModal = ref(false);

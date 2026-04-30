@@ -129,6 +129,12 @@ export interface CreateChatModelOptions {
 }
 
 /**
+ * 智谱 / 通义等 OpenAI 兼容网关往往不支持 LangChain 默认带的 `stream_options.include_usage`，
+ * 或对单次 max_tokens 上限更严；超出易返回 400「参数有误」。
+ */
+const THIRD_PARTY_MAX_COMPLETION_TOKENS = 8192
+
+/**
  * 根据「模型 id」（如 `glm-4-flash`、`gpt-4o`）创建已配置好的 `ChatOpenAI`。
  *
  * 流程：`modelValue` → `getModelConfig` 取 `provider` → `resolveProviderEnv` → `new ChatOpenAI({ configuration: { baseURL } })`。
@@ -145,13 +151,21 @@ export function createChatModel(
 
   const { apiKey, baseURL } = resolveProviderEnv(cfg.provider)
 
+  const thirdParty = cfg.provider === 'zhipu' || cfg.provider === 'aliyun'
+  const requestedMax = opts?.maxTokens ?? cfg.maxTokens
+  const maxTokens = thirdParty
+    ? Math.min(requestedMax, THIRD_PARTY_MAX_COMPLETION_TOKENS)
+    : requestedMax
+
   return new ChatOpenAI({
     model: modelValue,
     apiKey,
     temperature: opts?.temperature ?? 0.7,
-    maxTokens: opts?.maxTokens ?? cfg.maxTokens,
+    maxTokens,
     timeout: 30000,
     maxRetries: 1,
     configuration: { baseURL },
+    // 关闭后流式请求不再带 stream_options，避免部分兼容网关 400
+    ...(thirdParty ? { streamUsage: false as const } : {}),
   })
 }
