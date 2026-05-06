@@ -41,6 +41,107 @@ function allResultsOlderThanCurrentYear(
   return rowYears.every((y) => y < currentYear);
 }
 
+/** 大区方位词，不能当地名做「结果必须含该词」校验，否则会误匹配「南方长城」等。 */
+const VAGUE_MACRO_REGION = new Set([
+  "南方",
+  "北方",
+  "东部",
+  "西部",
+  "中部",
+  "华东",
+  "华南",
+  "华北",
+  "西南",
+  "西北",
+  "东北",
+]);
+
+/**
+ * 「南方天气」等大区问法补充权威气象检索词，减少落到具体景点子站（如南方长城）。
+ */
+function expandVagueMacroRegionWeatherQuery(query: string): string {
+  const q = query.trim();
+  if (!q || !/[\u4e00-\u9fff]/.test(q)) return q;
+  if (!/(天气|气温|温度)/.test(q)) return q;
+  if (q.length > 28) return q;
+  if (
+    /^(南方|北方|东部|西部|中部|华东|华南|华北|西南|西北|东北)(地区)?的?(天气|气温|温度)/.test(
+      q,
+    ) &&
+    !/(气象局|中央气象台|weather\.cma|nmc\.cn)/i.test(q)
+  ) {
+    return `${q} 中央气象台 区域预报`;
+  }
+  return q;
+}
+
+/**
+ * 中文天气类查询若未带地区，补充「中国」等词，减轻 Tavily 偏向英语/美国站点的问题。
+ */
+function expandWebSearchQueryForRegion(query: string): string {
+  const q = query.trim();
+  if (!q) return q;
+  const hasCjk = /[\u4e00-\u9fff]/.test(q);
+  if (!hasCjk) return q;
+  const weatherish =
+    /(天气|气温|温度|下雨|降雨|雨雪|台风|雾霾|空气|穿什么|forecast)/i.test(q);
+  if (!weatherish) return q;
+  if (
+    /(中国|北京|上海|广州|深圳|天津|重庆|香港|澳门|台湾|省|市|区|县|气象局|中央气象台)/.test(
+      q,
+    ) ||
+    /(weather\.cma|nmc\.cn)/i.test(q)
+  ) {
+    return q;
+  }
+  return `${q} 中国 天气预报`;
+}
+
+/**
+ * 从中文天气类问句里抽出地名片段（如「南通今天天气」→「南通」），用于校验结果相关性。
+ */
+function extractChinesePlaceHint(query: string): string | null {
+  const q = query.trim();
+  const m1 = q.match(/^([\u4e00-\u9fff]{2,12}?)(今天|明天|明日|本周|下周|天气|气温)/);
+  if (m1?.[1]) {
+    const place = m1[1].replace(/的$/u, "");
+    if (place.length >= 2 && !VAGUE_MACRO_REGION.has(place)) return place;
+  }
+  const m2 = q.match(/^(今天|明天|明日)([\u4e00-\u9fff]{2,12}?)(的)?(天气|气温)/);
+  if (m2?.[2]) {
+    const place = m2[2].replace(/的$/u, "");
+    if (place.length >= 2 && !VAGUE_MACRO_REGION.has(place)) return place;
+  }
+  return null;
+}
+
+/** 判断检索结果是否在标题/摘要/链接中出现给定地名。 */
+function resultsMentionPlace(
+  rows: Array<{ title?: string; content?: string; url?: string }>,
+  place: string,
+) {
+  if (!place) return false;
+  return rows.some((r) => {
+    const blob = `${r.title || ""} ${r.content || ""} ${r.url || ""}`;
+    return blob.includes(place);
+  });
+}
+
+/** 将更相关的结果排在前面，优先保留含地名的条目。 */
+function sortRowsByPlace(
+  rows: Array<{ title?: string; content?: string; url?: string; score?: number }>,
+  place: string,
+) {
+  if (!place) return rows;
+  return [...rows].sort((a, b) => {
+    const hit = (r: typeof a) =>
+      `${r.title || ""} ${r.content || ""} ${r.url || ""}`.includes(place) ? 1 : 0;
+    const d = hit(b) - hit(a);
+    if (d !== 0) return d;
+    return Number(b.score || 0) - Number(a.score || 0);
+  });
+}
+
 async function tavilySearch(
   apiKey: string,
   query: string,
@@ -117,7 +218,8 @@ export const webSearchOpenAITool = {
       properties: {
         query: {
           type: "string",
-          description: "要搜索的关键词或问题",
+          description:
+            "要搜索的关键词或问题；用户用中文问天气/新闻时请保留中文并尽量带上地区（如 北京、中国）。",
         },
       },
       required: ["query"],
@@ -138,8 +240,11 @@ export const searchTool = tool(
     }
 
     try {
-      const realtime = isRealtimeIntent(query);
-      const first = await tavilySearch(apiKey, query, {
+      const effectiveQuery = expandWebSearchQueryForRegion(
+        expandVagueMacroRegionWeatherQuery(query),
+      );
+      const realtime = isRealtimeIntent(effectiveQuery);
+      const first = await tavilySearch(apiKey, effectiveQuery, {
         realtime,
         maxResults: 5,
       });
@@ -150,12 +255,19 @@ export const searchTool = tool(
       let rows = first.rows;
       let answer = first.data?.answer || "";
       const currentYear = first.now.getFullYear();
+      const placeHint = extractChinesePlaceHint(effectiveQuery);
+      const localWeatherQuery =
+        Boolean(placeHint) && /(天气|气温|温度|下雨|降雨)/.test(effectiveQuery);
 
-      // 实时问题下，若结果几乎都在旧年份，自动二次检索拉回到当前年上下文。
-      if (realtime && allResultsOlderThanCurrentYear(rows, currentYear)) {
+      // 实时问题下，若结果几乎都在旧年份，自动二次检索拉回到当前年上下文（本地天气带地名时跳过，避免被英文新闻站带偏）。
+      if (
+        realtime &&
+        allResultsOlderThanCurrentYear(rows, currentYear) &&
+        !localWeatherQuery
+      ) {
         const boosted = await tavilySearch(
           apiKey,
-          `${query} ${currentYear} 最新`,
+          `${effectiveQuery} ${currentYear} 最新`,
           { realtime: true, maxResults: 5 },
         );
         if (boosted.response.ok && !boosted.data?.error && boosted.rows.length) {
@@ -164,8 +276,29 @@ export const searchTool = tool(
         }
       }
 
+      // 中文地名 + 天气：若结果完全不提该地名，用国内天气关键词二次检索。
+      if (
+        placeHint &&
+        localWeatherQuery &&
+        rows.length > 0 &&
+        !resultsMentionPlace(rows, placeHint)
+      ) {
+        const fallback = await tavilySearch(
+          apiKey,
+          `${placeHint} 天气预报 中国`,
+          { realtime: false, maxResults: 5 },
+        );
+        if (fallback.response.ok && !fallback.data?.error && fallback.rows.length) {
+          rows = sortRowsByPlace(fallback.rows, placeHint);
+          answer = fallback.data?.answer || answer;
+        }
+      } else if (placeHint && rows.length > 0) {
+        rows = sortRowsByPlace(rows, placeHint);
+      }
+
       const normalized = {
-        query,
+        query: effectiveQuery,
+        originalQuery: query !== effectiveQuery ? query : undefined,
         serverNow: getServerNowPayload(),
         answer,
         results: rows.slice(0, 5),

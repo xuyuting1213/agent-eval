@@ -19,6 +19,15 @@ export interface EvaluationResultItem {
   toolCallCount?: number;
   toolSourceCount?: number;
   toolAvgScore?: number;
+  hasKnowledgeHit?: boolean;
+  trajectory?: Array<Record<string, unknown>>;
+  toolMetrics?: {
+    totalCalls?: number;
+    success?: number;
+    avgScore?: number;
+    toolQualityScore?: number;
+  };
+  scenario?: string | null;
 }
 
 interface StreamChunk {
@@ -35,12 +44,23 @@ interface StreamChunk {
   toolCallCount?: number;
   toolSourceCount?: number;
   toolAvgScore?: number;
+  hasKnowledgeHit?: boolean;
+  trajectory?: Array<Record<string, unknown>>;
+  toolMetrics?: {
+    totalCalls?: number;
+    success?: number;
+    avgScore?: number;
+    toolQualityScore?: number;
+  };
+  scenario?: string | null;
 }
 
 interface RunnerOptions {
   selectedModel: Ref<string>;
   questionsText: Ref<string>;
   enableTools: Ref<boolean>;
+  selectedScenario: Ref<string>;
+  selectedKnowledgeBase: Ref<string | null>;
   message: {
     success: (text: string) => void;
     warning: (text: string) => void;
@@ -49,11 +69,20 @@ interface RunnerOptions {
 }
 
 export const useEvaluateRunner = (options: RunnerOptions) => {
-  const { selectedModel, questionsText, enableTools, message } = options;
+  const {
+    selectedModel,
+    questionsText,
+    enableTools,
+    selectedScenario,
+    selectedKnowledgeBase,
+    message,
+  } = options;
   const loading = ref(false);
   const results = ref<EvaluationResultItem[]>([]);
   const submittedQuestions = ref<string[]>([]);
   const evaluationId = ref<number | null>(null);
+  /** 正在写入历史（persist / save），用于按钮禁用与文案。 */
+  const savingHistory = ref(false);
   let abortControllers: AbortController[] = [];
 
   const questionCount = computed(
@@ -74,10 +103,18 @@ export const useEvaluateRunner = (options: RunnerOptions) => {
     results.value.reduce((sum, r) => sum + (r.totalTokens || 0), 0),
   );
   /**
-   * 将工具返回的 JSON 文本整理成可读摘要，避免直接把长 JSON 塞到回答区。
+   * 将工具返回的 JSON 文本整理成可读摘要；已是服务端格式化的预览则原样返回。
    */
   const formatToolResult = (raw?: string) => {
     if (!raw) return "无工具结果";
+    if (
+      raw.includes("联网摘要") ||
+      raw.includes("知识库命中摘要") ||
+      raw.includes("服务器当前时间（") ||
+      raw.includes("实况天气（APISpace")
+    ) {
+      return raw;
+    }
     try {
       const parsed = JSON.parse(raw) as {
         answer?: string;
@@ -136,6 +173,8 @@ export const useEvaluateRunner = (options: RunnerOptions) => {
     question: string,
     model: string,
     enableToolsFlag: boolean,
+    scenario: string,
+    knowledgeBaseId: string | null,
     onChunk: (chunk: StreamChunk) => void,
     signal: AbortSignal,
   ) => {
@@ -146,6 +185,8 @@ export const useEvaluateRunner = (options: RunnerOptions) => {
         question,
         model,
         enableTools: enableToolsFlag,
+        scenario,
+        knowledgeBaseId,
       }),
       signal,
     });
@@ -237,6 +278,8 @@ export const useEvaluateRunner = (options: RunnerOptions) => {
             question,
             selectedModel.value,
             enableTools.value,
+            selectedScenario.value,
+            selectedKnowledgeBase.value,
             (chunk) => {
               const current = results.value[resultIndex];
               if (!current) return;
@@ -246,8 +289,15 @@ export const useEvaluateRunner = (options: RunnerOptions) => {
               } else if (chunk.type === "tool_call") {
                 const tip = `\n[工具调用] ${chunk.tool || "web_search"}: ${chunk.query || question}\n`;
                 current.content = (current.content || "") + tip;
+                if (chunk.tool === "knowledge_search") {
+                  current.hasKnowledgeHit = true;
+                }
               } else if (chunk.type === "tool_result") {
-                const resultText = `\n[工具结果]\n${formatToolResult(chunk.content)}\n`;
+                const head =
+                  chunk.tool != null
+                    ? `[${chunk.tool}] 查询: ${chunk.query ?? ""}\n`
+                    : "";
+                const resultText = `\n[工具结果]\n${head}${formatToolResult(chunk.content)}\n`;
                 current.content = (current.content || "") + resultText;
               } else if (chunk.type === "done") {
                 current.totalTokens = chunk.totalTokens || 0;
@@ -258,6 +308,18 @@ export const useEvaluateRunner = (options: RunnerOptions) => {
                 current.toolCallCount = Number(chunk.toolCallCount || 0);
                 current.toolSourceCount = Number(chunk.toolSourceCount || 0);
                 current.toolAvgScore = Number(chunk.toolAvgScore || 0);
+                current.hasKnowledgeHit = Boolean(
+                  chunk.hasKnowledgeHit ?? current.hasKnowledgeHit,
+                );
+                current.trajectory = Array.isArray(chunk.trajectory)
+                  ? chunk.trajectory
+                  : [];
+                current.toolMetrics =
+                  typeof chunk.toolMetrics === "object" && chunk.toolMetrics
+                    ? chunk.toolMetrics
+                    : undefined;
+                current.scenario =
+                  typeof chunk.scenario === "string" ? chunk.scenario : null;
                 current.streamStatus = "done";
               } else if (chunk.type === "error") {
                 current.content = chunk.error || "生成失败";
@@ -338,6 +400,8 @@ export const useEvaluateRunner = (options: RunnerOptions) => {
       message.warning("暂无评测结果可保存");
       return;
     }
+    if (savingHistory.value) return;
+    savingHistory.value = true;
     const name = `比言_${new Date().toLocaleString()}`;
     try {
       if (evaluationId.value != null) {
@@ -353,6 +417,35 @@ export const useEvaluateRunner = (options: RunnerOptions) => {
             model: selectedModel.value,
             questions: submittedQuestions.value,
             results: results.value,
+            trajectory: results.value.flatMap((item, idx) =>
+              Array.isArray(item.trajectory)
+                ? item.trajectory.map((step) => ({
+                    ...step,
+                    questionIndex: idx,
+                  }))
+                : [],
+            ),
+            toolMetrics: {
+              totalCalls: results.value.reduce(
+                (sum, item) => sum + Number(item.toolCallCount || 0),
+                0,
+              ),
+              success: results.value.reduce(
+                (sum, item) => sum + Number(item.toolMetrics?.success || 0),
+                0,
+              ),
+              avgScore:
+                results.value.filter((item) => Number(item.toolAvgScore || 0) > 0)
+                  .reduce((sum, item) => sum + Number(item.toolAvgScore || 0), 0) /
+                  Math.max(
+                    1,
+                    results.value.filter(
+                      (item) => Number(item.toolAvgScore || 0) > 0,
+                    ).length,
+                  ),
+            },
+            scenario: selectedScenario.value,
+            knowledgeBaseId: selectedKnowledgeBase.value,
             metrics: {
               totalQuestions: submittedQuestions.value.length,
               totalDuration: totalDuration.value,
@@ -360,14 +453,24 @@ export const useEvaluateRunner = (options: RunnerOptions) => {
               totalTokens: totalTokens.value,
               completedCount: completedCount.value,
               enableTools: enableTools.value,
+              scenario: selectedScenario.value,
+              knowledgeBaseId: selectedKnowledgeBase.value,
             },
           },
         });
         evaluationId.value = res.id;
       }
       message.success("保存成功！可以在历史记录中查看");
-    } catch {
-      message.error("保存失败");
+    } catch (e: unknown) {
+      const msg =
+        e && typeof e === "object" && "data" in e
+          ? String((e as { data?: { message?: string } }).data?.message || "")
+          : e instanceof Error
+            ? e.message
+            : "";
+      message.error(msg ? `保存失败：${msg}` : "保存失败");
+    } finally {
+      savingHistory.value = false;
     }
   };
 
@@ -397,6 +500,7 @@ export const useEvaluateRunner = (options: RunnerOptions) => {
 
   return {
     loading,
+    savingHistory,
     results,
     submittedQuestions,
     evaluationId,

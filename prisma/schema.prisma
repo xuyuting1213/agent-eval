@@ -16,14 +16,107 @@ model TestSet {
   updatedAt   DateTime     @updatedAt
 }
 
+model KnowledgeBase {
+  id          String     @id @default(cuid())
+  name        String
+  description String?
+  owner       String?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  documents   Document[]
+  chunks      Chunk[]
+}
+
+model Document {
+  id              String        @id @default(cuid())
+  knowledgeBaseId String
+  name            String
+  originalName    String
+  format          String
+  size            Int
+  status          String
+  chunkCount      Int           @default(0)
+  errorMessage    String?
+  uploadedAt      DateTime      @default(now())
+  embeddedAt      DateTime?
+  knowledgeBase   KnowledgeBase @relation(fields: [knowledgeBaseId], references: [id], onDelete: Cascade)
+  chunks          Chunk[]
+
+  @@index([knowledgeBaseId])
+}
+
+model Chunk {
+  id              String        @id @default(cuid())
+  documentId      String
+  knowledgeBaseId String
+  content         String
+  chunkIndex      Int
+  tokenCount      Int
+  createdAt       DateTime      @default(now())
+  document        Document      @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  knowledgeBase   KnowledgeBase @relation(fields: [knowledgeBaseId], references: [id], onDelete: Cascade)
+
+  @@index([knowledgeBaseId])
+  @@index([documentId])
+}
+
 model Evaluation {
-  id        Int      @id @default(autoincrement())
-  testSetId Int
-  results   Json
-  metrics   Json
-  testSet   TestSet  @relation(fields: [testSetId], references: [id], onDelete: Cascade)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id          Int      @id @default(autoincrement())
+  name        String?
+  testSetId   Int?
+  results     Json
+  metrics     Json
+  trajectory  Json?
+  toolMetrics Json?
+  scenario    String?
+  testSet     TestSet? @relation(fields: [testSetId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
   @@index([testSetId])
+}
+
+model BenchmarkSuite {
+  id          String         @id @default(cuid())
+  name        String         @unique
+  description String?
+  category    String
+  tasks       Json
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+  runs        BenchmarkRun[]
+}
+
+model BenchmarkRun {
+  id        String         @id @default(cuid())
+  suiteId   String
+  suite     BenchmarkSuite @relation(fields: [suiteId], references: [id], onDelete: Cascade)
+  model     String
+  results   Json
+  summary   Json
+  createdAt DateTime       @default(now())
+
+  @@index([suiteId])
+  @@index([model])
+}
+
+model AdversarialTest {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  description String?
+  category    String
+  tasks       Json
+  createdAt   DateTime @default(now())
+}
+
+model AdversarialRun {
+  id           String   @id @default(cuid())
+  model        String
+  results      Json
+  summary      Json
+  byCategory   Json
+  createdAt    DateTime @default(now())
+
+  @@index([model])
+  @@index([createdAt])
 }

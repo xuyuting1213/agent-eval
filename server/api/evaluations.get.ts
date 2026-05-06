@@ -31,7 +31,7 @@ export default defineEventHandler(async (event) => {
     const metrics = evalItem.metrics as any
     return {
       id: evalItem.id,
-      name: evalItem.testSet?.name || `比言 ${evalItem.id}`,
+      name: evalItem.name || evalItem.testSet?.name || `比言 ${evalItem.id}`,
       createdAt: evalItem.createdAt,
       totalQuestions: metrics?.totalQuestions || 0,
       averageScore: metrics?.averageScore || 0,

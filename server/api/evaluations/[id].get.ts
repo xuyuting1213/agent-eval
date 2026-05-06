@@ -40,8 +40,12 @@ export default defineEventHandler(async (event) => {
 
   return {
     id: evaluation.id,
+    name: evaluation.name ?? evaluation.testSet?.name ?? `比言 ${evaluation.id}`,
     createdAt: evaluation.createdAt,
     results: formattedResults,
     metrics,
+    trajectory: evaluation.trajectory,
+    toolMetrics: evaluation.toolMetrics,
+    scenario: evaluation.scenario,
   }
 })

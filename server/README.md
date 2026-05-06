@@ -18,4 +18,4 @@ Nuxt 3 在构建时由 **Nitro** 扫描本目录：这里的代码运行在 **No
 
 ## 更细的接口表
 
-与请求体、响应结构相关的说明见仓库 [`docs/backend-flow.md`](../docs/backend-flow.md)。
+与请求体、响应结构相关的说明见仓库 [`docs/M1-M2-implementation.md`](../docs/M1-M2-implementation.md)。

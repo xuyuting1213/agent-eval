@@ -1,5 +1,5 @@
 import { createChatModel } from '~/server/services/llm';
-import { searchTool } from '~/server/tools/search';
+import { searchTool } from '~/server/tools';
 
 export interface ToolCallResult {
   content: string;

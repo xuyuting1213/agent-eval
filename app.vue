@@ -27,6 +27,12 @@
             <NuxtLink to="/compare" :class="navClass('/compare')"
               >模型横评</NuxtLink
             >
+            <NuxtLink to="/knowledge-base" :class="navClass('/knowledge-base')"
+              >知识库</NuxtLink
+            >
+            <NuxtLink to="/benchmark" :class="navClass('/benchmark')"
+              >Benchmark</NuxtLink
+            >
             <NuxtLink to="/performance" :class="navClass('/performance')">
               ⚡ 性能监控
             </NuxtLink>
