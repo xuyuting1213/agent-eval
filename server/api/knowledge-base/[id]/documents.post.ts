@@ -1,5 +1,5 @@
 import mammoth from "mammoth";
-import { PDFParse } from "pdf-parse";
+import pdfParse from "pdf-parse";
 import { prisma } from "~/server/utils/db";
 import { processDocument } from "~/server/services/knowledgeBase";
 
@@ -20,10 +20,12 @@ export default defineEventHandler(async (event) => {
   let text = "";
   try {
     if (ext === "pdf") {
-      const parser = new PDFParse({ data: file.data });
-      const parsed = await parser.getText();
-      text = parsed.text || "";
-      await parser.destroy();
+      // 使用 pdf-parse 1.x：纯 Node 抽文本，避免 2.x 依赖 pdfjs-dist + Canvas/DOMMatrix 导致线上 500
+      const buf = Buffer.isBuffer(file.data)
+        ? file.data
+        : Buffer.from(file.data);
+      const parsed = await pdfParse(buf);
+      text = (parsed.text && String(parsed.text)) || "";
     } else if (ext === "docx") {
       const parsed = await mammoth.extractRawText({ buffer: file.data });
       text = parsed.value || "";
